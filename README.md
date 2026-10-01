@@ -143,7 +143,7 @@ tests/                … 動作確認用のテスト(公開には不要。ア�
   ```
   cd tests
   TZ=Asia/Tokyo node unit.js && TZ=Asia/Tokyo node sets-unit.js && TZ=Asia/Tokyo node v12-unit.js && TZ=America/Los_Angeles node v12-unit.js
-  node scenario.js && node robust.js && TZ=Asia/Tokyo node fixes.js && node sets.js && node shots.js && node tabs.js && node shopping.js && node pfccols.js
+  node scenario.js && node robust.js && TZ=Asia/Tokyo node fixes.js && node sets.js && node shots.js && node tabs.js && node shopping.js && node pfccols.js && node typing.js
   ```
   - `unit.js` / `sets-unit.js` / `v12-unit.js` … core の関数のテスト(ブラウザ不要)
   - `scenario.js` / `robust.js` / `fixes.js` / `sets.js` / `shots.js` … v1.0〜v1.1 の画面のテスト

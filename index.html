@@ -154,6 +154,8 @@ body.has-alert .topbar { padding-top: 6px; } /* 上余白は警告バー側が�
 body.has-update .content, body.has-update .content.no-fab { padding-bottom: calc(var(--tb) + 150px); }
 /* 設定画面ではタブバーを隠す。固定要素の基準はホームバーの上だけになる */
 body.no-tabbar { --tb: env(safe-area-inset-bottom); }
+/* 買い物・値段の入力欄でキーボードを出している間もタブバーを隠す。iOS ではキーボードの上に持ち上がって見えてしまうため(ふつうのアプリと同じ見え方にする) */
+body.typing { --tb: env(safe-area-inset-bottom); }
 .card {
   background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow);
 }
@@ -283,19 +285,21 @@ body.no-tabbar { --tb: env(safe-area-inset-bottom); }
 }
 .entry:first-child, .food:first-child, .set:first-child, .pick:first-child { border-top: 0; }
 .entry:active, .food:active, .set:active, .pick:active { background: var(--field); }
-.entry .time { flex: 0 0 auto; width: 46px; font-size: 14px; color: var(--muted); }
+.entry .time { flex: 0 0 auto; width: 44px; font-size: 14px; color: var(--muted); }
 .entry .body, .food .body, .set .body, .pick .body { flex: 1; min-width: 0; }
 .entry .name, .food .name, .set .name, .pick .name { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .entry .name.untitled { color: var(--muted); }
 .entry .pfc, .food .pfc, .set .pfc, .pick .pfc { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pfc b { font-weight: 600; }
-/* P/F/C を等幅の3列で表示する。各列の幅を固定するので、桁数が変わっても F・C の始まる位置がずれない */
-.pfc-cols { display: inline-flex; column-gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; vertical-align: top; }
+/* P/F/C を等幅の3列で表示する。各列の幅を固定するので、桁数が変わっても F・C の始まる位置がずれない。「P」「F」「C」は左、グラムは右にそろえる */
+.pfc-cols { display: inline-flex; column-gap: 10px; white-space: nowrap; font-variant-numeric: tabular-nums; vertical-align: top; }
 .pfc-cols .m { display: inline-flex; align-items: baseline; }
-.pfc-cols .m i { font-style: normal; width: 0.85em; }         /* 「P」「F」「C」の幅を固定 */
-.pfc-cols .m b { min-width: 4.8ch; }                          /* 数字の幅を確保(「1,000」「999.9」まで列がずれない) */
-.pfc .pfc-note { margin-left: 8px; }                         /* 「1杯あたり」などの補足は列の後ろに置く */
-.set-item .pfc-cols, .set-add-item .pfc-cols { column-gap: 6px; }  /* セットの行は量の入力欄があって狭いので、列の間を少しだけ詰める */
+.pfc-cols .m i { font-style: normal; width: 0.75em; }         /* 「P」「F」「C」の幅を固定 */
+.pfc-cols .m b { min-width: 4.6ch; text-align: right; }      /* 数字の幅を確保(「1,000」「999.9」まで列がずれない)。グラムは右揃えで桁をそろえる */
+.pfc-cols .m u { text-decoration: none; margin-left: 1px; font-size: 0.92em; }  /* 単位の「g」 */
+.name-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; } /* マイ食品の行: 名前の横に「1杯あたり」などの補足 */
+.name-line .name { flex: 0 1 auto; min-width: 0; }
+.name-line .pfc-note { flex: 0 0 auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .pfc .vp { color: var(--p); } .pfc .vf { color: var(--f); } .pfc .vc { color: var(--c); }
 .entry .kcal, .food .kcal, .set .kcal, .pick .kcal { flex: 0 0 auto; font-size: 15px; font-weight: 600; white-space: nowrap; }
 .entry .kcal small, .food .kcal small, .set .kcal small, .pick .kcal small { font-size: 11px; font-weight: 400; color: var(--muted); margin-left: 2px; }
@@ -304,11 +308,14 @@ body.no-tabbar { --tb: env(safe-area-inset-bottom); }
 /* セット: 編集シート・追加シートの品の行(名前と値 / 量の入力欄と単位 / 外す) */
 .field-label { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
 .set-rows { display: flex; flex-direction: column; margin-bottom: 8px; }
-.set-item, .set-add-item { display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 6px 0; border-top: 1px solid var(--line); }
+.set-item, .set-add-item { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-height: 60px; padding: 6px 0; border-top: 1px solid var(--line); }
 .set-item:first-child, .set-add-item:first-child { border-top: 0; }
 .set-item .body, .set-add-item .body { flex: 1; min-width: 0; }
 .set-item .name, .set-add-item .name { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.set-item .pfc, .set-add-item .pfc { display: flex; flex-wrap: wrap; column-gap: 8px; font-size: 12px; color: var(--muted); } /* 狭いので kcal は入りきらなければ次の行へ(数字は切らない) */
+/* セットの行: 1行目に名前と量の入力欄、2行目に行の幅いっぱいで P/F/C と kcal を出す */
+.set-item > .pfc, .set-add-item > .pfc { flex: 0 0 100%; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; padding-bottom: 2px; font-size: 12px; color: var(--muted); }
+.set-add-item > .pfc { padding-left: 34px; } /* チェックボックスの分だけ下げて、名前の下にそろえる */
+.set-item .body .pfc, .set-add-item .body .pfc { display: block; font-size: 12px; color: var(--muted); } /* 削除されたマイ食品の行の注記(名前の下) */
 .qty { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
 .qty input[type="number"] { width: 78px; text-align: right; padding: 8px; } /* 全体の input 指定(width:100%)より強く */
 .qty .unit { flex: 0 0 auto; width: 60px; font-size: 15px; line-height: 1.2; color: var(--muted); overflow-wrap: anywhere; } /* 幅を固定して量の入力欄の位置をそろえる。長い単位は省略せず折り返す */
@@ -321,7 +328,7 @@ input.bad { border-color: var(--over); }
 /* 追加シート: チェックボックスと名前をまとめて 1 つのタップ領域にする */
 .set-add-item .check { flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 10px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 .set-add-check { flex: 0 0 auto; width: 24px; height: 24px; margin: 0; accent-color: var(--accent); }
-.set-add-item.off .body, .set-add-item.off .qty { opacity: .45; }
+.set-add-item.off .body, .set-add-item.off .qty, .set-add-item.off > .pfc { opacity: .45; }
 .set-add-item.missing { opacity: .45; }
 .set-item.missing .name, .set-add-item.missing .name { color: var(--muted); }
 #btn-set-add-food { margin-bottom: 4px; }
@@ -353,7 +360,7 @@ input.bad { border-color: var(--over); }
   background: var(--tabbar-bg); border-top: 1px solid var(--line);
   -webkit-backdrop-filter: saturate(180%) blur(12px); backdrop-filter: saturate(180%) blur(12px);
 }
-body.no-tabbar #tabbar { display: none; }
+body.no-tabbar #tabbar, body.typing #tabbar { display: none; }
 .tab {
   flex: 1 1 0; min-width: 0; min-height: 44px; position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
@@ -1251,7 +1258,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
 (function () {
 'use strict';
 
-const APP_VERSION = '1.2.0';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
+const APP_VERSION = '1.2.1';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
 const DATA_VERSION = 1;        // 保存データの形式バージョン
 const NUTRIENTS = ['p', 'f', 'c'];
 const NUTRIENT_LABEL = { p: 'たんぱく質', f: '脂質', c: '炭水化物' };
@@ -2555,14 +2562,14 @@ function renderFoodsTab() {
 // P/F/C を等幅の3列で出す HTML(記録一覧・マイ食品一覧・セットの行で共通)
 function pfcColsHtml(v) {
   return '<span class="pfc-cols">' + core.NUTRIENTS.map((k) =>
-    '<span class="m"><i>' + k.toUpperCase() + '</i><b class="v' + k + '">' + core.fmtG(v[k]) + '</b></span>').join('') + '</span>';
+    '<span class="m"><i>' + k.toUpperCase() + '</i><b class="v' + k + '">' + core.fmtG(v[k]) + '</b><u>g</u></span>').join('') + '</span>';
 }
 function renderFoods() {
   const foods = core.sortFoods(core.activeFoods(state.data.foods)); // PFC未登録は「PFC未登録」の切替に出す
   $('food-list').innerHTML = foods.map((f) =>
     '<button type="button" class="food" data-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' を編集">' +
-      '<span class="body"><span class="name">' + esc(f.name) + '</span>' +
-      '<span class="pfc num">' + pfcColsHtml(f) + '<span class="pfc-note">' + esc(core.basisLabel(f)) + '</span></span></span>' +
+      '<span class="body"><span class="name-line"><span class="name">' + esc(f.name) + '</span><span class="pfc-note">' + esc(core.basisLabel(f)) + '</span></span>' +
+      '<span class="pfc num">' + pfcColsHtml(f) + '</span></span>' +
       '<span class="kcal num">' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + '<small>kcal</small></span>' +
     '</button>').join('');
   $('food-empty').hidden = foods.length > 0;
@@ -3154,9 +3161,10 @@ function renderSetItems() {
         '<button type="button" class="set-item-remove" aria-label="削除されたマイ食品を外す">外す</button></div>';
     }
     return '<div class="set-item" data-index="' + i + '">' +
-      '<span class="body"><span class="name">' + esc(food.name) + '</span><span class="pfc num"></span></span>' +
+      '<span class="body"><span class="name">' + esc(food.name) + '</span></span>' +
       amountInputHtml('set-item-amount', food, it.text, food.name) +
       '<button type="button" class="set-item-remove" aria-label="' + esc(food.name) + ' を外す">外す</button>' +
+      '<span class="pfc num"></span>' + // P/F/C は行の幅いっぱいの2行目に出す(量の入力欄の横は狭いため)
     '</div>';
   }).join('');
   $('set-items-empty').hidden = state.setDraft.items.length > 0;
@@ -3216,8 +3224,8 @@ function openFoodPicker() {
   const inSet = new Set(state.setDraft ? state.setDraft.items.map((it) => it.foodId) : []);
   $('food-picker-list').innerHTML = foods.map((f) =>
     '<button type="button" class="pick" data-food-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' をセットに入れる">' +
-      '<span class="body"><span class="name">' + esc(f.name) + '</span>' +
-      '<span class="pfc num">' + pfcColsHtml(f) + '<span class="pfc-note">' + esc(core.basisLabel(f)) + (inSet.has(f.id) ? ' · <span class="in-set">入っています</span>' : '') + '</span></span></span>' +
+      '<span class="body"><span class="name-line"><span class="name">' + esc(f.name) + '</span><span class="pfc-note">' + esc(core.basisLabel(f)) + (inSet.has(f.id) ? ' · <span class="in-set">入っています</span>' : '') + '</span></span>' +
+      '<span class="pfc num">' + pfcColsHtml(f) + '</span></span>' +
       '<span class="kcal num">' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + '<small>kcal</small></span>' +
     '</button>').join('');
   $('food-picker-empty').hidden = foods.length > 0;
@@ -3254,8 +3262,9 @@ function openSetAddSheet(setId, fromHome) {
     }
     return '<div class="set-add-item" data-index="' + v.index + '">' +
       '<label class="check"><input class="set-add-check" type="checkbox" checked aria-label="' + esc(v.name) + ' を追加する">' +
-        '<span class="body"><span class="name">' + esc(v.name) + '</span><span class="pfc num"></span></span></label>' +
+        '<span class="body"><span class="name">' + esc(v.name) + '</span></span></label>' +
       amountInputHtml('set-add-amount', v.food, String(v.amount), v.name) +
+      '<span class="pfc num"></span>' + // P/F/C は行の幅いっぱいの2行目に出す(量の入力欄の横は狭いため)
     '</div>';
   }).join('');
   $('set-add-empty').hidden = vals.some((v) => v.available);
@@ -3940,7 +3949,24 @@ async function checkUpdate() {
 }
 
 // ---------- イベント登録(すべて一度だけ。動的要素は委譲で扱う) ----------
+// シートの外(画面そのもの)にある文字の入力欄か。買い物の「買うものを追加」と値段の「品名で検索」が当てはまる
+function isPageTextInput(el) {
+  return !!(el && el.matches && el.matches('input:not([type="checkbox"]):not([type="radio"]):not([type="button"]), textarea') && !el.closest('.sheet'));
+}
+// 入力欄にフォーカスがある(キーボードが出ている)間は body.typing を付けて、タブバーを隠す
+function bindTypingState() {
+  document.addEventListener('focusin', (ev) => { if (isPageTextInput(ev.target)) document.body.classList.add('typing'); });
+  document.addEventListener('focusout', () => {
+    // 入力欄から入力欄へ移るときは付けたままにする(focusout の直後はまだ移動先が決まっていないので少し待つ)
+    setTimeout(() => {
+      if (isPageTextInput(document.activeElement)) return;
+      document.body.classList.remove('typing');
+      window.scrollTo(window.scrollX, window.scrollY); // iOS でキーボードを閉じた後に画面がずれたまま残るのを戻す
+    }, 0);
+  });
+}
 function bindEvents() {
+  bindTypingState();
   // ヘッダ
   $('btn-prev-day').addEventListener('click', () => { state.dateKey = core.addDays(state.dateKey, -1); state.followToday = false; render(); });
   $('btn-next-day').addEventListener('click', () => { const t = today(); if (state.dateKey >= t) return; state.dateKey = core.addDays(state.dateKey, 1); state.followToday = state.dateKey === t; render(); });
