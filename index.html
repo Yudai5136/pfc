@@ -106,7 +106,7 @@ h2 { font-size: 13px; color: var(--muted); letter-spacing: .02em; margin: 0 0 8p
 .small { font-size: 13px; }
 
 /* ==========================================================================
-   ビュー(メイン / 設定 / マイ食品)とヘッダ
+   ビュー(メイン / 設定 / マイ食品 / セット)とヘッダ
    ========================================================================== */
 /* 警告バー(#alerts)が出ているときはその分だけ下げる。safe-area の上余白は「いちばん上にある要素」だけが取る */
 .view { min-height: 100%; padding-top: var(--alert-h); }
@@ -252,22 +252,55 @@ body.has-update .content, body.has-update .content.no-fab { padding-bottom: calc
    記録一覧・マイ食品一覧
    ========================================================================== */
 .list { display: flex; flex-direction: column; }
-.entry, .food {
+.entry, .food, .set, .pick {
   display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 8px 0;
   text-align: left; border-top: 1px solid var(--line);
 }
-.entry:first-child, .food:first-child { border-top: 0; }
-.entry:active, .food:active { background: var(--field); }
+.entry:first-child, .food:first-child, .set:first-child, .pick:first-child { border-top: 0; }
+.entry:active, .food:active, .set:active, .pick:active { background: var(--field); }
 .entry .time { flex: 0 0 auto; width: 46px; font-size: 14px; color: var(--muted); }
-.entry .body, .food .body { flex: 1; min-width: 0; }
-.entry .name, .food .name { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entry .body, .food .body, .set .body, .pick .body { flex: 1; min-width: 0; }
+.entry .name, .food .name, .set .name, .pick .name { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .entry .name.untitled { color: var(--muted); }
-.entry .pfc, .food .pfc { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entry .pfc, .food .pfc, .set .pfc, .pick .pfc { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pfc b { font-weight: 600; }
 .pfc .vp { color: var(--p); } .pfc .vf { color: var(--f); } .pfc .vc { color: var(--c); }
-.entry .kcal, .food .kcal { flex: 0 0 auto; font-size: 15px; font-weight: 600; white-space: nowrap; }
-.entry .kcal small, .food .kcal small { font-size: 11px; font-weight: 400; color: var(--muted); margin-left: 2px; }
-#entry-empty, #food-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 20px 8px; margin: 0; }
+.entry .kcal, .food .kcal, .set .kcal, .pick .kcal { flex: 0 0 auto; font-size: 15px; font-weight: 600; white-space: nowrap; }
+.entry .kcal small, .food .kcal small, .set .kcal small, .pick .kcal small { font-size: 11px; font-weight: 400; color: var(--muted); margin-left: 2px; }
+#entry-empty, #food-empty, #set-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 20px 8px; margin: 0; }
+
+/* セット: 編集シート・追加シートの品の行(名前と値 / 量の入力欄と単位 / 外す) */
+.field-label { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+.set-rows { display: flex; flex-direction: column; margin-bottom: 8px; }
+.set-item, .set-add-item { display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 6px 0; border-top: 1px solid var(--line); }
+.set-item:first-child, .set-add-item:first-child { border-top: 0; }
+.set-item .body, .set-add-item .body { flex: 1; min-width: 0; }
+.set-item .name, .set-add-item .name { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.set-item .pfc, .set-add-item .pfc { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qty { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
+.qty input[type="number"] { width: 78px; text-align: right; padding: 8px; } /* 全体の input 指定(width:100%)より強く */
+.qty .unit { flex: 0 0 auto; width: 60px; font-size: 15px; line-height: 1.2; color: var(--muted); overflow-wrap: anywhere; } /* 幅を固定して量の入力欄の位置をそろえる。長い単位は省略せず折り返す */
+.qty .unit.long { font-size: 12px; } /* 「スライス」「パック(200g)」など 4 文字以上は小さめの字で全部見せる */
+input.bad { border-color: var(--over); }
+.set-item-remove {
+  flex: 0 0 auto; min-height: 44px; min-width: 44px; padding: 0 10px; border-radius: 10px;
+  color: var(--over); background: var(--danger-bg); font-size: 15px; font-weight: 600;
+}
+/* 追加シート: チェックボックスと名前をまとめて 1 つのタップ領域にする */
+.set-add-item .check { flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 10px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.set-add-check { flex: 0 0 auto; width: 24px; height: 24px; margin: 0; accent-color: var(--accent); }
+.set-add-item.off .body, .set-add-item.off .qty { opacity: .45; }
+.set-add-item.missing { opacity: .45; }
+.set-item.missing .name, .set-add-item.missing .name { color: var(--muted); }
+#btn-set-add-food { margin-bottom: 4px; }
+/* 追加シートの下部(合計と「追加」)は、品が多くてもスクロールせずに見えるよう下に固定する */
+.sheet-footer {
+  position: sticky; bottom: calc(-16px - env(safe-area-inset-bottom)); z-index: 1;
+  margin: 0 -16px calc(-16px - env(safe-area-inset-bottom)); padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+  background: var(--card); border-top: 1px solid var(--line);
+}
+.sheet-footer .amount-preview { margin-top: 0; }
+.pick .in-set { color: var(--accent); }
 
 /* 画面下に固定の「＋ 記録する」ボタン */
 .fab {
@@ -354,6 +387,7 @@ textarea { min-height: 120px; font-size: 16px; font-family: ui-monospace, Menlo,
 .sheet {
   position: fixed; left: 0; right: 0; top: var(--vvt); height: var(--vvh); z-index: 40;
   display: flex; flex-direction: column; justify-content: flex-end;
+  padding-top: calc(8px + env(safe-area-inset-top)); /* 背の高いシートでも見出しがステータスバー / Dynamic Island の下に入らない。上の隙間は背景(タップで閉じる) */
 }
 .sheet-backdrop { position: absolute; inset: 0; background: var(--backdrop); }
 .sheet-panel {
@@ -365,6 +399,8 @@ textarea { min-height: 120px; font-size: 16px; font-family: ui-monospace, Menlo,
 }
 .sheet-panel .grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 10px; }
 .sheet-panel h3 { font-size: 18px; margin-bottom: 12px; }
+/* シートの重なり順: セット編集 < 食品の選択 < マイ食品の登録(選択シートから重ねて開く) */
+#sheet-food-picker { z-index: 42; }
 #sheet-food { z-index: 45; }
 
 /* ==========================================================================
@@ -441,6 +477,8 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
     </section>
 
     <section class="quick">
+      <h2>セット</h2>
+      <div id="set-chips" class="chips"><button type="button" id="btn-sets-manage" class="chip manage" aria-label="セットを管理"><span class="name">＋ セットを管理</span></button></div>
       <h2>マイ食品</h2>
       <div id="food-chips" class="chips"><button type="button" id="btn-foods-manage" class="chip manage" aria-label="マイ食品を管理"><span class="name">＋ マイ食品を管理</span></button></div>
       <h2>最近の記録</h2>
@@ -511,7 +549,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
     <section class="card">
       <h2>危険な操作</h2>
       <button id="btn-wipe" class="btn btn-danger" aria-label="全データを削除">全データを削除</button>
-      <p class="help">記録・マイ食品・目標をすべて消します。先にバックアップを取ってください。</p>
+      <p class="help">記録・マイ食品・セット・目標をすべて消します。先にバックアップを取ってください。</p>
     </section>
   </main>
 </section>
@@ -529,6 +567,23 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
       <p id="food-empty" hidden>マイ食品はまだありません。右上の「＋ 追加」か、記録シートの「この内容をマイ食品に登録」から登録できます。</p>
     </section>
     <p class="section-note">マイ食品を削除しても、過去の記録はそのまま残ります。</p>
+  </main>
+</section>
+
+<!-- ===================== セット(管理画面) ===================== -->
+<section id="view-sets" class="view" hidden>
+  <header class="topbar topbar-3">
+    <button id="btn-sets-back" class="text-btn" aria-label="メインに戻る">‹ 戻る</button>
+    <h1 class="title">セット</h1>
+    <span style="min-width:44px"></span>
+  </header>
+  <main class="content no-fab">
+    <button id="btn-set-new" class="btn btn-primary" aria-label="新しいセットを作る">＋ 新しいセット</button>
+    <section class="card" style="margin-top:12px">
+      <div id="set-list" class="list"></div>
+      <p id="set-empty" hidden>セットはまだありません。毎朝の朝食のように決まった組み合わせを、マイ食品から選んでまとめておけます。</p>
+    </section>
+    <p class="section-note">セットの中身はマイ食品を参照します。マイ食品の値を直すと、セットにも反映されます。</p>
   </main>
 </section>
 
@@ -608,6 +663,69 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
   </div>
 </div>
 
+<!-- ===================== セットの作成・編集シート ===================== -->
+<div id="sheet-set" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="set"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-set-title">
+    <div class="grabber"></div>
+    <h3 id="sheet-set-title">セットを作る</h3>
+    <label class="field"><span>名前(必須)</span><input id="set-name" type="text" maxlength="100" autocomplete="off" placeholder="例 いつもの朝食"></label>
+    <div class="field-label">中身(マイ食品と量)</div>
+    <div id="set-items" class="set-rows"></div>
+    <p id="set-items-empty" class="help" style="margin:0 0 12px">まだ何も入っていません。下の「＋ 食品を追加」からマイ食品を選んでください。</p>
+    <button id="btn-set-add-food" class="btn btn-secondary" aria-label="セットに食品を追加">＋ 食品を追加</button>
+    <div id="set-total" class="amount-preview num" aria-label="セットの合計">
+      <div class="vp"><span>P</span><b data-n="p">0</b><span>g</span></div>
+      <div class="vf"><span>F</span><b data-n="f">0</b><span>g</span></div>
+      <div class="vc"><span>C</span><b data-n="c">0</b><span>g</span></div>
+    </div>
+    <p class="kcal-live" style="text-align:center">合計 <b id="set-total-kcal" class="num">0</b> kcal</p>
+    <div class="btn-row">
+      <button id="btn-set-cancel" class="btn btn-secondary" aria-label="キャンセル">キャンセル</button>
+      <button id="btn-set-save" class="btn btn-primary" aria-label="保存">保存</button>
+    </div>
+    <div class="btn-row"><button id="btn-set-delete" class="btn btn-danger" aria-label="このセットを削除" hidden>このセットを削除</button></div>
+  </div>
+</div>
+
+<!-- ===================== マイ食品の選択シート(セットに入れる食品を選ぶ) ===================== -->
+<div id="sheet-food-picker" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="food-picker"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-picker-title">
+    <div class="grabber"></div>
+    <h3 id="sheet-picker-title">セットに入れる食品</h3>
+    <button id="btn-picker-new-food" class="btn btn-secondary" aria-label="新しいマイ食品を登録">＋ 新しいマイ食品を登録</button>
+    <div id="food-picker-list" class="list" style="margin-top:8px"></div>
+    <p id="food-picker-empty" class="help" hidden>マイ食品がまだありません。上の「＋ 新しいマイ食品を登録」から登録すると、そのままセットに入ります。</p>
+    <div class="btn-row"><button id="btn-picker-cancel" class="btn btn-secondary" aria-label="キャンセル">キャンセル</button></div>
+  </div>
+</div>
+
+<!-- ===================== セット追加シート(中身を確認してから記録する) ===================== -->
+<div id="sheet-set-add" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="set-add"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="set-add-name">
+    <div class="grabber"></div>
+    <h3 id="set-add-name">セット</h3>
+    <p id="set-add-date" class="help num" style="margin:-8px 0 8px"></p>
+    <div id="set-add-items" class="set-rows"></div>
+    <p id="set-add-empty" class="help" style="margin:0 0 12px" hidden>このセットには使える食品が入っていません。セットの管理から食品を入れてください。</p>
+    <label class="field"><span>時刻</span><input id="set-add-time" type="time"></label>
+    <div class="sheet-footer">
+      <div id="set-add-total" class="amount-preview num" aria-label="チェックした品の合計">
+        <div class="vp"><span>P</span><b data-n="p">0</b><span>g</span></div>
+        <div class="vf"><span>F</span><b data-n="f">0</b><span>g</span></div>
+        <div class="vc"><span>C</span><b data-n="c">0</b><span>g</span></div>
+      </div>
+      <p class="kcal-live" style="text-align:center">合計 <b id="set-add-kcal" class="num">0</b> kcal</p>
+      <div class="btn-row">
+        <button id="btn-set-add-cancel" class="btn btn-secondary" aria-label="キャンセル">キャンセル</button>
+        <button id="btn-set-add-confirm" class="btn btn-primary" aria-label="追加">追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- トースト(元に戻す付き) -->
 <div id="toast" class="toast" role="status" hidden><span id="toast-text"></span><button id="toast-undo" aria-label="元に戻す" hidden>元に戻す</button></div>
 <!-- 新バージョン通知 -->
@@ -621,7 +739,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
 (function () {
 'use strict';
 
-const APP_VERSION = '1.0.0';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
+const APP_VERSION = '1.1.0';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
 const DATA_VERSION = 1;        // 保存データの形式バージョン
 const NUTRIENTS = ['p', 'f', 'c'];
 const NUTRIENT_LABEL = { p: 'たんぱく質', f: '脂質', c: '炭水化物' };
@@ -635,6 +753,7 @@ const RECENT_LIMIT = 8;
 const RECENT_WINDOW_DAYS = 30;
 const BACKUP_STALE_DAYS = 14;
 const BACKUP_MIN_ENTRIES = 20;
+const MAX_SET_ITEMS = 50;     // 1 つのセットに入れられる品の上限(異常に大きいファイル対策)
 
 // ---------- 数値まわり ----------
 function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -800,9 +919,9 @@ function sortEntries(entries) {
     return ca < cb ? -1 : ca > cb ? 1 : 0;
   });
 }
-// マイ食品の並び: usedAt の新しい順(未使用は末尾、名前順)
-function sortFoods(foods) {
-  return (Array.isArray(foods) ? foods.slice() : []).sort((a, b) => {
+// マイ食品・セットの並び: usedAt の新しい順(未使用は末尾、名前順)
+function sortByUsed(list) {
+  return (Array.isArray(list) ? list.slice() : []).filter((x) => x && typeof x === 'object').sort((a, b) => {
     const ua = a.usedAt || '', ub = b.usedAt || '';
     if (ua && ub && ua !== ub) return ua < ub ? 1 : -1;
     if (ua && !ub) return -1;
@@ -810,6 +929,8 @@ function sortFoods(foods) {
     return String(a.name || '').localeCompare(String(b.name || ''), 'ja');
   });
 }
+function sortFoods(foods) { return sortByUsed(foods); }
+function sortSets(sets) { return sortByUsed(sets); }
 // マイ食品を分量でスケールし、記録の形にする
 function scaleFood(food, amount) {
   const amt = Math.max(0, toNum(amount));
@@ -833,6 +954,63 @@ function amountDefaults(food) {
 function basisLabel(food) {
   if (food && food.basis === 'per100g') return '100gあたり';
   return (String((food && food.servingLabel) || '').trim() || '1食') + 'あたり';
+}
+
+// ---------- セット(12章) ----------
+// id でマイ食品を探す(なければ null)
+function findFood(foods, id) {
+  if (typeof id !== 'string' || !Array.isArray(foods)) return null;
+  return foods.find((f) => f && f.id === id) || null;
+}
+// セットの量として使える値か(0 より大きい数)。小数1桁に丸めた値、使えなければ null
+function setAmount(v) {
+  if (!isNumeric(v)) return null;
+  const n = round1(typeof v === 'string' ? parseNum(v) : v);
+  if (!(n > 0)) return null;
+  return Math.min(n, MAX_G);
+}
+// セットの品ごとの値。マイ食品を参照して、いまの値と量から P/F/C を計算する。
+// 削除されたマイ食品を指す品は available: false(画面では使えない品として薄く出す)
+function setItemValues(set, foods) {
+  const items = set && Array.isArray(set.items) ? set.items : [];
+  return items.map((it, index) => {
+    const foodId = it && typeof it.foodId === 'string' ? it.foodId : '';
+    const amount = setAmount(it && it.amount) || 0;
+    const food = findFood(foods, foodId);
+    if (!food) return { index, foodId, amount, food: null, available: false, name: '削除されたマイ食品', unit: '', entryName: '', p: 0, f: 0, c: 0, kcal: 0 };
+    const s = scaleFood(food, amount); // 記録の名前も分量シートと同じ付け方(「プロテイン」「白米 150g」「バナナ ×2」)
+    return { index, foodId, amount, food, available: true, name: food.name, unit: amountDefaults(food).unit, entryName: s.name, p: s.p, f: s.f, c: s.c, kcal: s.kcal };
+  });
+}
+// セットの合計(使える品だけ)。count は使える品の数。kcal は合計 P/F/C から計算(メイン画面の合計と同じ式)
+function setTotals(set, foods) {
+  const vals = setItemValues(set, foods).filter((v) => v.available);
+  const sum = sumEntries(vals);
+  return { p: sum.p, f: sum.f, c: sum.c, kcal: sum.kcal, count: vals.length };
+}
+// チップの小さい文字: 「3品 · 512kcal」
+function setSubLabel(set, foods) {
+  const t = setTotals(set, foods);
+  return t.count + '品 · ' + fmtInt(t.kcal) + 'kcal';
+}
+// そのマイ食品を使っているセットの数
+function countSetsUsingFood(sets, foodId) {
+  return (Array.isArray(sets) ? sets : []).filter((s) => s && Array.isArray(s.items) && s.items.some((it) => it && it.foodId === foodId)).length;
+}
+// マイ食品を削除したとき、各セットから該当する品を取り除いた新しい配列を返す(空になったセットも残す)
+function removeFoodFromSets(sets, foodId) {
+  return (Array.isArray(sets) ? sets : []).map((s) => {
+    if (!s || !Array.isArray(s.items) || !s.items.some((it) => it && it.foodId === foodId)) return s;
+    return Object.assign({}, s, { items: s.items.filter((it) => !(it && it.foodId === foodId)) });
+  });
+}
+// マイ食品の基準(1食分 / 100g)を変えたとき、各セットでのその食品の量を新しい基準の初期値に戻した新しい配列を返す。
+// 量の意味(個数 / グラム数)が変わるので、古い数字のままだと「白米 150g」が「150食分」になってしまう
+function resetFoodAmountInSets(sets, foodId, amount) {
+  return (Array.isArray(sets) ? sets : []).map((s) => {
+    if (!s || !Array.isArray(s.items) || !s.items.some((it) => it && it.foodId === foodId)) return s;
+    return Object.assign({}, s, { items: s.items.map((it) => (it && it.foodId === foodId ? Object.assign({}, it, { amount }) : it)) });
+  });
 }
 // 最近の記録: 直近 30 日から名前+P/F/C が同じものを1つにまとめ、新しい順に最大 8 件
 function recentItems(days, today, limit) {
@@ -917,6 +1095,7 @@ function emptyState(nowIso) {
     settings: { targets: null, direction: Object.assign({}, DEFAULT_DIRECTION), updatedAt: null },
     days: {},
     foods: [],
+    sets: [],
     meta: { createdAt: nowIso || localIso(new Date()), lastBackupAt: null, appVersion: APP_VERSION }
   };
 }
@@ -971,6 +1150,29 @@ function normFood(f) {
     useCount: Math.max(0, Math.round(toNum(f.useCount)))
   };
 }
+// セットの品 1 つ。foodId が文字列でない、amount が数でない(0 以下も含む)ものは捨てる
+function normSetItem(it) {
+  if (!it || typeof it !== 'object' || Array.isArray(it)) return null;
+  if (typeof it.foodId !== 'string' || !it.foodId) return null;
+  if (typeof it.amount !== 'number' && typeof it.amount !== 'string') return null;
+  const amount = setAmount(it.amount);
+  if (amount === null) return null;
+  return { foodId: it.foodId.slice(0, 64), amount };
+}
+// セット 1 つ。オブジェクトでないもの、名前が空のものは捨てる。品が 0 個のセットは残す(マイ食品の削除で空になることがある)
+function normSet(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return null;
+  const name = typeof s.name === 'string' ? s.name.trim().slice(0, MAX_NAME) : '';
+  if (!name) return null;
+  return {
+    id: typeof s.id === 'string' && s.id ? s.id.slice(0, 64) : genId('s'),
+    name,
+    items: (Array.isArray(s.items) ? s.items : []).map(normSetItem).filter(Boolean).slice(0, MAX_SET_ITEMS),
+    usedAt: isValidIso(s.usedAt) ? s.usedAt : null,
+    useCount: Math.max(0, Math.round(toNum(s.useCount))),
+    createdAt: isValidIso(s.createdAt) ? s.createdAt : null
+  };
+}
 // 保存データを安全な形に揃える(欠けた項目は補い、不正な項目は捨てる)
 function normalize(obj, nowIso) {
   const src = obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : {};
@@ -985,6 +1187,7 @@ function normalize(obj, nowIso) {
     },
     days: {},
     foods: [],
+    sets: [],
     meta: {
       createdAt: src.meta && isValidIso(src.meta.createdAt) ? src.meta.createdAt : base.meta.createdAt,
       lastBackupAt: src.meta && isValidIso(src.meta.lastBackupAt) ? src.meta.lastBackupAt : null,
@@ -1009,6 +1212,14 @@ function normalize(obj, nowIso) {
     const nf = normFood(f);
     if (!nf || fids.has(nf.id)) return;
     fids.add(nf.id); out.foods.push(nf);
+  });
+  // セット(v1.1.0 で追加)。無い・配列でないなら []。id が重複していたら振り直す
+  const sids = new Set();
+  (Array.isArray(src.sets) ? src.sets : []).forEach((st) => {
+    const ns = normSet(st);
+    if (!ns) return;
+    if (sids.has(ns.id)) ns.id = genId('s');
+    sids.add(ns.id); out.sets.push(ns);
   });
   return out;
 }
@@ -1038,7 +1249,7 @@ function validateImport(obj) {
   if (structural) return { ok: false, reason: structural };
   // settings は必須にしない(仕様 6.4: version・days・foods の存在を検証)。欠けていれば normalize が既定値で補う
   const data = normalize(migrate(obj).data);
-  return { ok: true, data, stats: { days: Object.keys(data.days).length, entries: countEntries(data.days), foods: data.foods.length } };
+  return { ok: true, data, stats: { days: Object.keys(data.days).length, entries: countEntries(data.days), foods: data.foods.length, sets: data.sets.length } };
 }
 // innerHTML に入れる前のエスケープ
 function escapeHtml(s) {
@@ -1046,12 +1257,13 @@ function escapeHtml(s) {
 }
 
 const core = {
-  APP_VERSION, DATA_VERSION, NUTRIENTS, NUTRIENT_LABEL, DEFAULT_DIRECTION, WEEKDAYS, MAX_G, MAX_NAME,
+  APP_VERSION, DATA_VERSION, MAX_SET_ITEMS, NUTRIENTS, NUTRIENT_LABEL, DEFAULT_DIRECTION, WEEKDAYS, MAX_G, MAX_NAME,
   normalizeDigits, toNum, parseNum, round1, roundG, clampG, fmtInt, fmtG, calcKcal,
   localDateKey, parseDateKey, isValidDateKey, addDays, todayKey, formatDateLabel, weekdayOf, formatTime, isValidTime, localIso, isValidIso,
-  sumEntries, judge, remainingLabel, statFor, dayStats, entryLabel, sortEntries, sortFoods, scaleFood, amountDefaults, basisLabel,
+  sumEntries, judge, remainingLabel, statFor, dayStats, entryLabel, sortEntries, sortByUsed, sortFoods, sortSets, scaleFood, amountDefaults, basisLabel,
+  findFood, setAmount, setItemValues, setTotals, setSubLabel, countSetsUsingFood, removeFoodFromSets, resetFoodAmountInSets,
   recentItems, weekSummary, countEntries, backupNeeded, formatLastBackup,
-  genId, emptyState, normTargets, normDirection, isNumeric, normEntry, normFood, normalize, migrate, structureError, validateImport, escapeHtml
+  genId, emptyState, normTargets, normDirection, isNumeric, normEntry, normFood, normSetItem, normSet, normalize, migrate, structureError, validateImport, escapeHtml
 };
 if (typeof window !== 'undefined') window.PFC = { core };
 })();
@@ -1077,12 +1289,17 @@ const state = {
   followToday: true,        // 「今日」を表示中なら日付が変わったとき追従する
   renderedToday: null,      // 最後に描画したときの「今日」(日付が変わったかの判定用)
   dayTimer: null,           // 次の 0 時に再描画するタイマー
-  view: 'main',             // 'main' | 'settings' | 'foods'
+  view: 'main',             // 'main' | 'settings' | 'foods' | 'sets'
   sheetDateKey: null,       // 記録シート/分量シートを開いたときの保存先の日(開いている間に日付が変わっても動かさない)
   sheetTime: null,          // 分量シートを開いたときの時刻(追加時の time に使う)
   editingEntryId: null,     // 編集中の記録 id(追加時は null)
   editingFoodId: null,      // 編集中のマイ食品 id
   amountFoodId: null,       // 分量シートの対象マイ食品 id
+  editingSetId: null,       // 編集中のセット id(新規は null)
+  setDraft: null,           // セット編集シートの中身 { items: [{ foodId, text }] }(text は量の入力欄の文字)
+  setAddId: null,           // セット追加シートの対象セット id
+  setAddFoodIds: [],        // セット追加シートの各行のマイ食品 id(開いたときの中身。行の data-index と対応)
+  foodSheetForSet: false,   // マイ食品の登録シートを、セットの食品選択シートから重ねて開いた
   recent: [],               // 「最近の記録」チップの内容(index でタップ先を引く)
   generation: 0,            // 読み込み/全削除のたびに増やす(元に戻すの安全確認用)
   toastTimer: null,
@@ -1183,11 +1400,14 @@ function render() {
   $('view-main').hidden = state.view !== 'main';
   $('view-settings').hidden = state.view !== 'settings';
   $('view-foods').hidden = state.view !== 'foods';
+  $('view-sets').hidden = state.view !== 'sets';
   if (state.view === 'main') renderMain(t);
   else if (state.view === 'foods') renderFoods();
+  else if (state.view === 'sets') renderSets();
   else renderSettingsInfo();
   // 記録シートを開いたまま日付が変わった場合、保存先の表示を正直に更新する(「今日」→「昨日」)
   if (!$('sheet-entry').hidden && state.sheetDateKey) $('entry-date').textContent = core.formatDateLabel(state.sheetDateKey, t) + ' に保存します';
+  if (!$('sheet-set-add').hidden && state.sheetDateKey) $('set-add-date').textContent = core.formatDateLabel(state.sheetDateKey, t) + ' に追加します';
 }
 function renderMain(t) {
   const data = state.data;
@@ -1225,6 +1445,17 @@ function renderMain(t) {
       '<span class="bars">' + d.bars.map((b) => '<span class="mini" data-n="' + b.n + '" data-status="' + b.status + '"><i style="height:' + Math.round(b.pct) + '%"></i></span>').join('') + '</span>' +
       '<span class="wd">' + d.weekday + '</span>' +
     '</button>').join('');
+
+  // セットチップ(「＋ セットを管理」チップは HTML に固定で置いてあり、その前に差し込む。セットが無ければ「＋ セットを作る」だけ)
+  const sets = core.sortSets(data.sets);
+  $('set-chips').querySelectorAll('.chip[data-set-id]').forEach((el) => el.remove());
+  $('btn-sets-manage').insertAdjacentHTML('beforebegin', sets.map((st) =>
+    '<button type="button" class="chip" data-set-id="' + esc(st.id) + '" aria-label="セット ' + esc(st.name) + ' を追加">' +
+      '<span class="name">' + esc(st.name) + '</span>' +
+      '<span class="sub num">' + esc(core.setSubLabel(st, data.foods)) + '</span>' +
+    '</button>').join(''));
+  $('btn-sets-manage').querySelector('.name').textContent = sets.length ? '＋ セットを管理' : '＋ セットを作る';
+  $('btn-sets-manage').setAttribute('aria-label', sets.length ? 'セットを管理' : 'セットを作る');
 
   // マイ食品チップ
   const foods = core.sortFoods(data.foods);
@@ -1267,6 +1498,21 @@ function renderFoods() {
       '<span class="kcal num">' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + '<small>kcal</small></span>' +
     '</button>').join('');
   $('food-empty').hidden = foods.length > 0;
+}
+// セット一覧: 名前、品数と中身の名前、kcal 合計
+function renderSets() {
+  const foods = state.data.foods;
+  const sets = core.sortSets(state.data.sets);
+  $('set-list').innerHTML = sets.map((st) => {
+    const t = core.setTotals(st, foods);
+    const names = core.setItemValues(st, foods).filter((v) => v.available).map((v) => v.name).join('、');
+    return '<button type="button" class="set" data-id="' + esc(st.id) + '" aria-label="セット ' + esc(st.name) + ' を編集">' +
+      '<span class="body"><span class="name">' + esc(st.name) + '</span>' +
+      '<span class="pfc">' + t.count + '品' + (names ? ' · ' + esc(names) : '(中身なし)') + '</span></span>' +
+      '<span class="kcal num">' + core.fmtInt(t.kcal) + '<small>kcal</small></span>' +
+    '</button>';
+  }).join('');
+  $('set-empty').hidden = sets.length > 0;
 }
 function renderSettingsInfo() {
   const onboarding = !state.data.settings.targets;
@@ -1314,7 +1560,8 @@ function toast(msg, undoFn) {
 function hideToast() { clearTimeout(state.toastTimer); state.toastTimer = null; state.undoAction = null; $('toast').hidden = true; }
 
 // ---------- シートの開閉 ----------
-function anySheetOpen() { return ['sheet-entry', 'sheet-food', 'sheet-amount'].some((id) => !$(id).hidden); }
+const SHEETS = ['sheet-entry', 'sheet-food', 'sheet-amount', 'sheet-set', 'sheet-food-picker', 'sheet-set-add'];
+function anySheetOpen() { return SHEETS.some((id) => !$(id).hidden); }
 // シートを開くときは表示中のトースト(「元に戻す」付きなど)を消す。開いている記録を「元に戻す」で消してしまう、といった食い違いを防ぐ
 function openSheet(id) { hideToast(); $(id).hidden = false; document.body.classList.add('lock'); syncViewport(); }
 function closeSheet(id) { $(id).hidden = true; if (!anySheetOpen()) document.body.classList.remove('lock'); }
@@ -1404,23 +1651,32 @@ function deleteEntry() {
     if (commit()) toast('元に戻しました');
   });
 }
-// 同じ内容を dayKey の日(省略時は表示中の日)に追加(最近の記録 / 分量シートから)。time 省略時はその日の既定時刻
-function addQuickEntry(item, label, dayKey, time) {
+// 記録をまとめて dayKey の日(省略時は表示中の日)に追加(最近の記録 / 分量シート / セットから)。time 省略時はその日の既定時刻。
+// 1 品ごとに別の記録になる。トーストの「元に戻す」は今回追加した記録をまとめて取り消す
+function addEntries(items, label, dayKey, time) {
   const key = dayKey || state.dateKey;
-  const entry = { id: core.genId('e'), name: item.name || '', p: core.clampG(item.p), f: core.clampG(item.f), c: core.clampG(item.c), time: core.isValidTime(time) ? time : defaultTimeFor(key), createdAt: core.localIso(new Date()) };
-  if (item.foodId) entry.foodId = item.foodId;
-  ensureDay(key).entries.push(entry);
+  const t = core.isValidTime(time) ? time : defaultTimeFor(key);
+  const createdAt = core.localIso(new Date());
+  const added = items.map((item) => {
+    const entry = { id: core.genId('e'), name: item.name || '', p: core.clampG(item.p), f: core.clampG(item.f), c: core.clampG(item.c), time: t, createdAt };
+    if (item.foodId) entry.foodId = item.foodId;
+    return entry;
+  });
+  const day = ensureDay(key);
+  added.forEach((e) => day.entries.push(e));
   // 表示中の日と違う日に追加した(シートを開いている間に日付が変わった)ときは、追加した日を見せる
   if (key !== state.dateKey) { state.dateKey = key; state.followToday = false; }
   if (!commit()) return; // 保存できなかった(警告バー表示中)ときは成功のトーストを出さない
   const gen = state.generation;
+  const ids = new Set(added.map((e) => e.id));
   toast(label || '追加しました', () => {
     if (gen !== state.generation) { toast('元に戻せませんでした'); return; }
     const d = state.data.days[key];
-    if (d) { const i = d.entries.findIndex((x) => x.id === entry.id); if (i >= 0) d.entries.splice(i, 1); }
+    if (d) d.entries = d.entries.filter((x) => !ids.has(x.id));
     if (commit()) toast('元に戻しました');
   });
 }
+function addQuickEntry(item, label, dayKey, time) { addEntries([item], label, dayKey, time); }
 
 // ---------- マイ食品シート ----------
 function foodFormValues() {
@@ -1439,9 +1695,10 @@ function updateFoodForm() {
   $('food-serving-label-field').hidden = v.basis === 'per100g';
   $('btn-food-save').disabled = v.invalid || !v.name;
 }
-// food: 編集対象(null なら追加)。prefill: 記録シートから引き継ぐ値
-function openFoodSheet(food, prefill) {
+// food: 編集対象(null なら追加)。prefill: 記録シートから引き継ぐ値。opts.forSet: セットの食品選択シートから開いた(保存したらセットに入れる)
+function openFoodSheet(food, prefill, opts) {
   state.editingFoodId = food ? food.id : null;
+  state.foodSheetForSet = !food && !!(opts && opts.forSet);
   const src = food || prefill || {};
   $('sheet-food-title').textContent = food ? 'マイ食品を編集' : 'マイ食品を追加';
   $('food-name').value = src.name || '';
@@ -1462,23 +1719,41 @@ function saveFood() {
   if (!v.name) return;
   const foods = state.data.foods;
   const isNew = !state.editingFoodId;
+  let newId = null;
+  let resetMsg = '';
   if (!isNew) {
     const f = foods.find((x) => x.id === state.editingFoodId);
     if (!f) { closeSheet('sheet-food'); toast('マイ食品が見つかりませんでした'); render(); return; }
+    const basisChanged = f.basis !== v.basis;
     Object.assign(f, { name: v.name, basis: v.basis, servingLabel: v.servingLabel, p: v.p, f: v.f, c: v.c });
+    // 基準を変えたら、セットでの量(個数 / グラム数)を新しい基準の初期値(1食分なら 1、100g 基準なら 100)に戻す
+    const used = basisChanged ? core.countSetsUsingFood(state.data.sets, f.id) : 0;
+    if (used) {
+      const d = core.amountDefaults(f);
+      state.data.sets = core.resetFoodAmountInSets(state.data.sets, f.id, d.value);
+      resetMsg = used + '個のセットでの量を ' + d.value + d.unit + ' に戻しました';
+    }
   } else {
-    foods.push({ id: core.genId('f'), name: v.name, basis: v.basis, servingLabel: v.servingLabel, p: v.p, f: v.f, c: v.c, usedAt: null, useCount: 0 });
+    newId = core.genId('f');
+    foods.push({ id: newId, name: v.name, basis: v.basis, servingLabel: v.servingLabel, p: v.p, f: v.f, c: v.c, usedAt: null, useCount: 0 });
   }
   closeSheet('sheet-food');
   const saved = commit();
+  // セットの食品選択シートから登録した → そのままセットに入れる(選択シートは閉じてセット編集シートに戻る)
+  if (isNew && state.foodSheetForSet && !$('sheet-set').hidden) addFoodToDraft(newId);
+  state.foodSheetForSet = false;
+  if (resetMsg && saved) toast(resetMsg);
   if (isNew && saved) toast('マイ食品に登録しました'); // 記録シートから登録したときは、そのシートを隠さない位置(画面上部)に出る
 }
 function deleteFood() {
   const id = state.editingFoodId;
   if (!id) return;
-  if (!window.confirm('このマイ食品を削除しますか？(過去の記録には影響しません)')) return;
+  // セットで使っていれば、そのセットからも外れることを確認文に出す(12.1)
+  const used = core.countSetsUsingFood(state.data.sets, id);
+  if (!window.confirm('このマイ食品を削除しますか？(過去の記録には影響しません)' + (used ? '\n' + used + '個のセットからも外れます。' : ''))) return;
   const i = state.data.foods.findIndex((x) => x.id === id);
   if (i >= 0) state.data.foods.splice(i, 1);
+  if (used) state.data.sets = core.removeFoodFromSets(state.data.sets, id); // 空になったセットも残す
   closeSheet('sheet-food');
   commit();
 }
@@ -1533,6 +1808,210 @@ function addFromAmountSheet() {
   food.useCount = (food.useCount || 0) + 1;
   closeSheet('sheet-amount');
   addQuickEntry(s, '追加しました', state.sheetDateKey || state.dateKey, state.sheetTime);
+}
+
+// ---------- セット(12章) ----------
+function findSet(id) { return state.data.sets.find((x) => x.id === id) || null; }
+// 品 1 行ぶんの値の文字: 「P20 F1.5 C3 · 106kcal」
+function pfcKcalText(v) { return 'P' + core.fmtG(v.p) + ' F' + core.fmtG(v.f) + ' C' + core.fmtG(v.c) + ' · ' + core.fmtInt(v.kcal) + 'kcal'; }
+// 合計欄(.amount-preview の P/F/C と kcal)に値を入れる
+function fillTotals(boxId, kcalId, sum) {
+  core.NUTRIENTS.forEach((k) => { $(boxId).querySelector('b[data-n="' + k + '"]').textContent = core.fmtG(sum[k]); });
+  $(kcalId).textContent = core.fmtInt(sum.kcal);
+}
+// 量の入力欄を読む。0 より大きい数なら小数1桁の値、空・0・不正なら null
+function readAmountInput(el) {
+  if (el.validity && el.validity.badInput) return null;
+  return core.setAmount(el.value);
+}
+// 品の量の入力欄(分量シートと同じ刻み。100g 基準は g、1食分基準は個数)
+function amountInputHtml(cls, food, value, label) {
+  const d = core.amountDefaults(food);
+  return '<span class="qty"><input class="' + cls + '" type="number" inputmode="decimal" min="0" step="' + d.step + '" value="' + esc(value) + '" aria-label="' + esc(label + ' の量(' + d.unit + ')') + '">' +
+    '<span class="unit' + (d.unit.length > 3 ? ' long' : '') + '">' + esc(d.unit) + '</span></span>';
+}
+// 「＋ セットを管理 / 作る」: セット一覧を開く。1 つも無ければそのまま作成シートも開く
+function openSetsManage() {
+  showView('sets');
+  if (!state.data.sets.length) openSetSheet(null);
+}
+
+// --- セットの作成・編集シート ---
+function openSetSheet(set) {
+  state.editingSetId = set ? set.id : null;
+  state.setDraft = { items: set ? set.items.map((it) => ({ foodId: it.foodId, text: String(it.amount) })) : [] };
+  $('sheet-set-title').textContent = set ? 'セットを編集' : 'セットを作る';
+  $('set-name').value = set ? set.name : '';
+  $('btn-set-delete').hidden = !set;
+  renderSetItems();
+  openSheet('sheet-set');
+  if (!set) focusLater($('set-name'));
+}
+// 品の一覧を描き直す(追加・外すのとき)。量の入力中は描き直さず updateSetForm だけ呼ぶ(フォーカスを保つため)
+function renderSetItems() {
+  const foods = state.data.foods;
+  $('set-items').innerHTML = state.setDraft.items.map((it, i) => {
+    const food = core.findFood(foods, it.foodId);
+    if (!food) {
+      return '<div class="set-item missing" data-index="' + i + '"><span class="body"><span class="name">削除されたマイ食品</span><span class="pfc">記録には使えません</span></span>' +
+        '<button type="button" class="set-item-remove" aria-label="削除されたマイ食品を外す">外す</button></div>';
+    }
+    return '<div class="set-item" data-index="' + i + '">' +
+      '<span class="body"><span class="name">' + esc(food.name) + '</span><span class="pfc num"></span></span>' +
+      amountInputHtml('set-item-amount', food, it.text, food.name) +
+      '<button type="button" class="set-item-remove" aria-label="' + esc(food.name) + ' を外す">外す</button>' +
+    '</div>';
+  }).join('');
+  $('set-items-empty').hidden = state.setDraft.items.length > 0;
+  updateSetForm();
+}
+// 入力欄の値で各品の値と合計を更新し、保存できるかを決める(名前が空・品が 0 個・量が不正なら保存不可)
+function updateSetForm() {
+  if (!state.setDraft) return;
+  const foods = state.data.foods;
+  const vals = [];
+  let bad = false;
+  $('set-items').querySelectorAll('.set-item[data-index]').forEach((row) => {
+    const it = state.setDraft.items[Number(row.dataset.index)];
+    const input = row.querySelector('.set-item-amount');
+    const food = it && core.findFood(foods, it.foodId);
+    if (!input || !food) return;
+    const amt = readAmountInput(input);
+    it.text = input.value;
+    input.classList.toggle('bad', amt === null);
+    if (amt === null) bad = true;
+    const sc = core.scaleFood(food, amt || 0);
+    row.querySelector('.pfc').textContent = pfcKcalText(sc);
+    vals.push(sc);
+  });
+  fillTotals('set-total', 'set-total-kcal', core.sumEntries(vals));
+  $('btn-set-save').disabled = !$('set-name').value.trim() || state.setDraft.items.length === 0 || bad;
+}
+function saveSet() {
+  updateSetForm();
+  if ($('btn-set-save').disabled) return;
+  const name = $('set-name').value.trim().slice(0, core.MAX_NAME);
+  const items = state.setDraft.items.map((it) => ({ foodId: it.foodId, amount: core.setAmount(it.text) })).filter((it) => it.amount !== null);
+  const isNew = !state.editingSetId;
+  if (!isNew) {
+    const st = findSet(state.editingSetId);
+    if (!st) { closeSheet('sheet-set'); toast('セットが見つかりませんでした'); render(); return; }
+    Object.assign(st, { name, items });
+  } else {
+    state.data.sets.push({ id: core.genId('s'), name, items, usedAt: null, useCount: 0, createdAt: core.localIso(new Date()) });
+  }
+  closeSheet('sheet-set');
+  const saved = commit();
+  if (isNew && saved) toast('セットを作りました');
+}
+function deleteSet() {
+  const id = state.editingSetId;
+  if (!id) return;
+  if (!window.confirm('このセットを削除しますか？(中のマイ食品と過去の記録はそのまま残ります)')) return;
+  state.data.sets = state.data.sets.filter((x) => x.id !== id);
+  closeSheet('sheet-set');
+  commit();
+}
+
+// --- マイ食品の選択シート(セット編集シートの上に重ねる) ---
+function openFoodPicker() {
+  const foods = core.sortFoods(state.data.foods);
+  const inSet = new Set(state.setDraft ? state.setDraft.items.map((it) => it.foodId) : []);
+  $('food-picker-list').innerHTML = foods.map((f) =>
+    '<button type="button" class="pick" data-food-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' をセットに入れる">' +
+      '<span class="body"><span class="name">' + esc(f.name) + '</span>' +
+      '<span class="pfc num">' + (inSet.has(f.id) ? '<span class="in-set">入っています</span> · ' : '') + esc(core.basisLabel(f)) + ' P<b class="vp">' + core.fmtG(f.p) + '</b> F<b class="vf">' + core.fmtG(f.f) + '</b> C<b class="vc">' + core.fmtG(f.c) + '</b></span></span>' +
+      '<span class="kcal num">' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + '<small>kcal</small></span>' +
+    '</button>').join('');
+  $('food-picker-empty').hidden = foods.length > 0;
+  openSheet('sheet-food-picker');
+}
+// 選んだマイ食品を、分量シートの初期値(1食分なら 1、100g 基準なら 100)でセットに入れる
+function addFoodToDraft(foodId) {
+  const food = core.findFood(state.data.foods, foodId);
+  if (!food || !state.setDraft) return;
+  if (state.setDraft.items.length >= core.MAX_SET_ITEMS) { toast('1つのセットに入れられるのは ' + core.MAX_SET_ITEMS + ' 品までです'); return; }
+  state.setDraft.items.push({ foodId: food.id, text: String(core.amountDefaults(food).value) });
+  closeSheet('sheet-food-picker');
+  renderSetItems();
+}
+
+// --- セット追加シート(タップ後に中身を確認して記録する) ---
+function openSetAddSheet(setId) {
+  const set = findSet(setId);
+  if (!set) { render(); return; }
+  catchUpDay(); // 0 時を過ぎていたら今日を追従させてから追加先を決める
+  state.sheetDateKey = state.dateKey; // 追加先の日はシートを開いた時点で確定(0 時をまたいでも動かさない)
+  state.setAddId = set.id;
+  const vals = core.setItemValues(set, state.data.foods);
+  state.setAddFoodIds = vals.map((v) => v.foodId);
+  $('set-add-name').textContent = set.name;
+  $('set-add-date').textContent = core.formatDateLabel(state.sheetDateKey, today()) + ' に追加します';
+  $('set-add-time').value = defaultTimeFor(state.sheetDateKey);
+  $('set-add-items').innerHTML = vals.map((v) => {
+    if (!v.available) {
+      // 削除されたマイ食品は薄く出し、チェックできないようにする
+      return '<div class="set-add-item missing" data-index="' + v.index + '"><label class="check"><input class="set-add-check" type="checkbox" disabled aria-label="削除されたマイ食品(使えません)">' +
+        '<span class="body"><span class="name">削除されたマイ食品</span><span class="pfc">使えません</span></span></label></div>';
+    }
+    return '<div class="set-add-item" data-index="' + v.index + '">' +
+      '<label class="check"><input class="set-add-check" type="checkbox" checked aria-label="' + esc(v.name) + ' を追加する">' +
+        '<span class="body"><span class="name">' + esc(v.name) + '</span><span class="pfc num"></span></span></label>' +
+      amountInputHtml('set-add-amount', v.food, String(v.amount), v.name) +
+    '</div>';
+  }).join('');
+  $('set-add-empty').hidden = vals.some((v) => v.available);
+  updateSetAddForm();
+  openSheet('sheet-set-add');
+  // 自動フォーカスはしない(分量シートと同じ。キーボードで「追加」が隠れないように)
+}
+// 追加シートの使える行: { row, food, check, input, checked, amount(不正なら null) }
+function setAddRows() {
+  const rows = [];
+  $('set-add-items').querySelectorAll('.set-add-item[data-index]').forEach((row) => {
+    const food = core.findFood(state.data.foods, state.setAddFoodIds[Number(row.dataset.index)]);
+    const check = row.querySelector('.set-add-check');
+    const input = row.querySelector('.set-add-amount');
+    if (!food || !input) return;
+    rows.push({ row, food, check, input, checked: check.checked, amount: readAmountInput(input) });
+  });
+  return rows;
+}
+// 各行の値と、チェックが入っている品の合計を更新。チェックが無い・チェックした品の量が不正なら「追加」を無効にする
+function updateSetAddForm() {
+  const picked = [];
+  let bad = false;
+  setAddRows().forEach((r) => {
+    r.row.classList.toggle('off', !r.checked);
+    r.input.classList.toggle('bad', r.checked && r.amount === null);
+    const sc = core.scaleFood(r.food, r.amount || 0);
+    r.row.querySelector('.pfc').textContent = pfcKcalText(sc);
+    if (!r.checked) return;
+    if (r.amount === null) bad = true; else picked.push(sc);
+  });
+  fillTotals('set-add-total', 'set-add-kcal', core.sumEntries(picked));
+  const btn = $('btn-set-add-confirm');
+  btn.disabled = bad || picked.length === 0;
+  btn.textContent = picked.length && !bad ? picked.length + '品を追加' : '追加';
+  btn.setAttribute('aria-label', btn.textContent);
+}
+function addFromSetSheet() {
+  const set = findSet(state.setAddId);
+  if (!set) { closeSheet('sheet-set-add'); render(); return; }
+  updateSetAddForm();
+  if ($('btn-set-add-confirm').disabled) return;
+  const picked = setAddRows().filter((r) => r.checked && r.amount !== null);
+  const key = state.sheetDateKey || state.dateKey;
+  const time = core.isValidTime($('set-add-time').value) ? $('set-add-time').value : defaultTimeFor(key);
+  const now = core.localIso(new Date());
+  // 記録の名前は分量シートと同じ付け方(scaleFood)。シートで変えた量・チェックはこの回だけで、セット自体は変えない
+  const items = picked.map((r) => {
+    r.food.usedAt = now; r.food.useCount = (r.food.useCount || 0) + 1;
+    return core.scaleFood(r.food, r.amount);
+  });
+  set.usedAt = now; set.useCount = (set.useCount || 0) + 1;
+  closeSheet('sheet-set-add');
+  addEntries(items, set.name + '(' + items.length + '品)を追加しました', key, time);
 }
 
 // ---------- 設定: 目標 ----------
@@ -1595,7 +2074,7 @@ function importFromText(text, sourceLabel) {
   try { obj = JSON.parse(String(text)); } catch (e) { toast(sourceLabel + ': JSON として読めませんでした'); return false; }
   const v = core.validateImport(obj);
   if (!v.ok) { toast(sourceLabel + ': 読み込めません(' + v.reason + ')'); return false; }
-  const msg = '現在のデータを上書きします。\n読み込む内容: 記録 ' + v.stats.entries + ' 件 / マイ食品 ' + v.stats.foods + ' 件\nよろしいですか？';
+  const msg = '現在のデータを上書きします。\n読み込む内容: 記録 ' + v.stats.entries + ' 件 / マイ食品 ' + v.stats.foods + ' 件 / セット ' + v.stats.sets + ' 件\nよろしいですか？';
   if (!window.confirm(msg)) return false;
   const prev = state.data;
   state.data = v.data;
@@ -1721,6 +2200,10 @@ function bindEvents() {
     const key = el.dataset.date; if (!core.isValidDateKey(key) || key > today()) return;
     state.dateKey = key; state.followToday = key === today(); render();
   });
+  $('set-chips').addEventListener('click', (ev) => {
+    if (ev.target.closest('#btn-sets-manage')) { openSetsManage(); return; }
+    const el = ev.target.closest('.chip[data-set-id]'); if (el) openSetAddSheet(el.dataset.setId);
+  });
   $('food-chips').addEventListener('click', (ev) => {
     if (ev.target.closest('#btn-foods-manage')) { showView('foods'); return; }
     const el = ev.target.closest('.chip[data-food-id]'); if (el) openAmountSheet(el.dataset.foodId);
@@ -1765,6 +2248,37 @@ function bindEvents() {
   $('btn-food-cancel').addEventListener('click', () => closeSheet('sheet-food'));
   $('btn-food-delete').addEventListener('click', deleteFood);
 
+  // セット画面・セット編集シート・食品の選択シート
+  $('btn-sets-back').addEventListener('click', () => showView('main'));
+  $('btn-set-new').addEventListener('click', () => openSetSheet(null));
+  $('set-list').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.set[data-id]'); if (!el) return;
+    const st = findSet(el.dataset.id);
+    if (st) openSetSheet(st); else render();
+  });
+  $('set-name').addEventListener('input', updateSetForm);
+  $('set-items').addEventListener('input', (ev) => { if (ev.target.classList.contains('set-item-amount')) updateSetForm(); });
+  $('set-items').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.set-item-remove'); if (!btn) return;
+    updateSetForm(); // 入力中の量を先に控えてから外す
+    state.setDraft.items.splice(Number(btn.closest('.set-item').dataset.index), 1);
+    renderSetItems();
+  });
+  $('btn-set-add-food').addEventListener('click', openFoodPicker);
+  $('btn-set-save').addEventListener('click', saveSet);
+  $('btn-set-cancel').addEventListener('click', () => closeSheet('sheet-set'));
+  $('btn-set-delete').addEventListener('click', deleteSet);
+  $('food-picker-list').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.pick[data-food-id]'); if (el) addFoodToDraft(el.dataset.foodId);
+  });
+  $('btn-picker-new-food').addEventListener('click', () => openFoodSheet(null, null, { forSet: true }));
+  $('btn-picker-cancel').addEventListener('click', () => closeSheet('sheet-food-picker'));
+
+  // セット追加シート
+  ['input', 'change'].forEach((type) => $('set-add-items').addEventListener(type, updateSetAddForm));
+  $('btn-set-add-confirm').addEventListener('click', addFromSetSheet);
+  $('btn-set-add-cancel').addEventListener('click', () => closeSheet('sheet-set-add'));
+
   // 分量シート
   $('amount-value').addEventListener('input', updateAmountForm);
   $('btn-amount-minus').addEventListener('click', () => stepAmount(-1));
@@ -1778,6 +2292,8 @@ function bindEvents() {
   $('sheet-entry').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); if (!$('btn-entry-save').disabled) saveEntry(); } });
   $('sheet-food').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.type !== 'radio') { ev.preventDefault(); if (!$('btn-food-save').disabled) saveFood(); } });
   $('sheet-amount').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); if (!$('btn-amount-add').disabled) addFromAmountSheet(); } });
+  $('sheet-set').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); if (!$('btn-set-save').disabled) saveSet(); } });
+  $('sheet-set-add').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.type !== 'checkbox') { ev.preventDefault(); if (!$('btn-set-add-confirm').disabled) addFromSetSheet(); } });
   // 入力欄にフォーカスしたらキーボードの上に見えるようにスクロール
   document.querySelectorAll('.sheet-panel').forEach((panel) => panel.addEventListener('focusin', (ev) => {
     const el = ev.target;
