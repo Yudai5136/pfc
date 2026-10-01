@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const CACHE = 'pfc-v1.2.1'; // リリースごとに index.html の APP_VERSION と合わせて更新する
+const CACHE = 'pfc-v1.2.2'; // リリースごとに index.html の APP_VERSION と合わせて更新する
 
 // 事前にキャッシュするファイル(すべて相対パス。GitHub Pages のサブパス配信に対応)
 const PRECACHE = [

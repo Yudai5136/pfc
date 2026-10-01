@@ -117,6 +117,9 @@ h2 { font-size: 13px; color: var(--muted); letter-spacing: .02em; margin: 0 0 8p
    ========================================================================== */
 /* 警告バー(#alerts)が出ているときはその分だけ下げる。safe-area の上余白は「いちばん上にある要素」だけが取る */
 .view { min-height: 100%; padding-top: var(--alert-h); }
+/* iOS のホーム画面アプリでは、ページが画面より短いと表示の高さが上の余白(ダイナミックアイランドの分、約 62pt)だけ縮み、
+   画面下のタブバーが浮いて見える(中身の少ない買い物・値段タブで起きていた)。どのタブも画面いっぱい以上の高さにして防ぐ */
+@supports (min-height: 100lvh) { .view { min-height: 100lvh; } }
 .topbar {
   position: sticky; top: var(--alert-h); z-index: 20;
   display: flex; align-items: center; gap: 4px;
@@ -1258,7 +1261,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
 (function () {
 'use strict';
 
-const APP_VERSION = '1.2.1';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
+const APP_VERSION = '1.2.2';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
 const DATA_VERSION = 1;        // 保存データの形式バージョン
 const NUTRIENTS = ['p', 'f', 'c'];
 const NUTRIENT_LABEL = { p: 'たんぱく質', f: '脂質', c: '炭水化物' };
