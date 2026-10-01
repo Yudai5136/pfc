@@ -4,18 +4,24 @@
 iPhone の Safari で「ホーム画面に追加」して、ふつうのアプリのように使います。
 
 - サーバもアカウントもありません。データはすべて **この iPhone の中** にだけ保存されます(通信・同期なし)。
-- ビルド不要・外部ライブラリなし。`index.html` 1 ファイルで動くので、あとから AI に手伝ってもらって直せます。
+- ビルド不要・外部ライブラリなし。書いたファイルがそのまま動くので、あとから AI に手伝ってもらって直せます。
+  v2.0.0 から、直しやすいように役割ごとのファイル(`index.html`・`css/`・`js/`)に分かれています(見た目と使い方は同じです)。
 
 ## ファイル構成
 
 ```
-index.html            … アプリ本体(HTML / CSS / JS を 1 ファイルに同梱)
+index.html            … 画面の骨組み(HTML)
+css/style.css         … 見た目(色・大きさ・並び)
+js/main.js            … 動きの入口(起動とボタンの登録)
+js/core/              … 計算だけの部品(合計・判定・日付・データの検証など。画面には触らない)
+js/app/               … 画面ごとの動き(ホーム・記録・マイ食品・セット・まとめて記録・買い物・値段・設定・自動更新など)
+js/package.json       … テスト用の小さな設定(アプリは使いません。アップロードしても問題ありません)
 manifest.webmanifest  … ホーム画面アプリ用の設定(名前・アイコン)
 sw.js                 … 圏外でも開けるようにする仕組み(Service Worker)
 icons/                … アイコン画像(180 / 192 / 512px)
 README.md             … このファイル
-仕様書.md             … 仕様書(AI に直してもらうときに渡す)
-tests/                … 動作確認用のテスト(公開には不要。アップロードしなくてよい)
+仕様書.md             … 仕様書(AI に直してもらうときに渡す。どのファイルが何をするかは 2 章と 9 章)
+tests/                … 動作確認用のテスト(公開には不要。アップロードしない)
 ```
 
 ## 1. GitHub Pages に置く(ブラウザだけで完了します)
@@ -23,7 +29,7 @@ tests/                … 動作確認用のテスト(公開には不要。ア�
 1. https://github.com で無料アカウントを作ります(すでにあればログイン)。
 2. 右上の「＋」→ **New repository**。Repository name に `pfc` と入力し、**Public** を選んで **Create repository**。
 3. できたページの「**uploading an existing file**」リンクを押します。
-4. このフォルダの `index.html`・`manifest.webmanifest`・`sw.js`・`README.md`・`仕様書.md` と **`icons` フォルダごと** ドラッグ&ドロップします(フォルダを落とすと中の画像も一緒に入ります)。
+4. このフォルダの `index.html`・`manifest.webmanifest`・`sw.js`・`README.md`・`仕様書.md` と、**`css`・`js`・`icons` の 3 つのフォルダごと** ドラッグ&ドロップします(フォルダを落とすと中のファイルも、`js/core` のような中のフォルダも一緒に入ります)。`tests` フォルダは入れません。
 5. 下の **Commit changes** を押します。
 6. リポジトリの **Settings** → 左の **Pages** → Source を「**Deploy from a branch**」、Branch を「**main**」/「**/ (root)**」にして **Save**。
 7. 数分待つと `https://<あなたのユーザー名>.github.io/pfc/` で開けます(同じ Pages 画面に URL が表示されます)。
@@ -38,7 +44,7 @@ tests/                … 動作確認用のテスト(公開には不要。ア�
 ## 3. 毎日の使い方
 
 画面の一番下に 5 つのタブがあります。左から **記録 / マイ食品 / ホーム / 買い物 / 値段** です。
-開くといつも **ホーム** から始まります。どのタブも右上の ⚙ が設定です。
+開くといつも **ホーム** から始まります。どのタブも右上の歯車(⚙)が設定です。
 
 ### ホーム(まん中のタブ)
 
@@ -116,14 +122,19 @@ tests/                … 動作確認用のテスト(公開には不要。ア�
 
 **新しい版は、アプリを開いたときに自動で届きます。** 操作は要りません。
 
-- アプリを開いたときや、裏から前に戻したときに新しい版を確認し、**入力中でなければその場で切り替わります**(「新しいバージョン(1.2.0)になりました」と 1 回だけ出ます)。
+- アプリを開いたときや、裏から前に戻したときに新しい版を確認し、**入力中でなければその場で切り替わります**(「新しいバージョン(2.0.0)になりました」と 1 回だけ出ます)。
 - 入力中(シートを開いている・入力欄を触っている・「元に戻す」が出ている)なら、終わった時点で切り替わります。記録は端末に保存されているので消えません。
 - 確認は 5 分に 1 回まで。すぐ確かめたいときは、設定 →「**更新を確認**」か、画面下の「新しいバージョンがあります [更新]」を押してください。
 
 **新しい版を公開する人(自分で直したとき)の手順**
-1. `index.html` の `APP_VERSION`(例 `'1.2.1'`)と `sw.js` の `CACHE`(例 `'pfc-v1.2.1'`)を **両方** 新しい番号にします。
-2. GitHub のリポジトリページで **Add file → Upload files** から変更したファイルをドラッグ&ドロップし、**Commit changes**(同じ名前のファイルは上書きされます)。
-3. 数分後、iPhone でアプリを開けば自動で新しい版になります。
+1. `js/core/constants.js` の `APP_VERSION`(例 `'2.0.1'`)と `sw.js` の `CACHE`(例 `'pfc-v2.0.1'`)を **両方** 新しい番号にします。
+   - **`CACHE` を変えないと、ファイルを上げても iPhone のアプリは前の版のままです**(v2.0.0 から、アプリは iPhone に入っている版のファイル一式で開き、`sw.js` が変わったときだけ新しい版に入れ替えるため。電波が弱くても速く開くための仕組みです)。
+2. GitHub のリポジトリページで **Add file → Upload files** を開き、このフォルダの **中身を全部**(`index.html`・`manifest.webmanifest`・`sw.js`・`README.md`・`仕様書.md` と、`css`・`js`・`icons` のフォルダ)を **1 回で** ドラッグ&ドロップして、**Commit changes** を押します(同じ名前のファイルは上書きされます。`tests` は入れません)。
+   - **v1.3.0 から v2.0.0 にするときも同じです。** `css` と `js` は新しいフォルダなので、必ずフォルダごと入れてください。
+   - 何回かに分けてアップロードすると、途中の状態(新しい `index.html` なのに `js` がまだ無い、など)で開いた iPhone の画面が崩れることがあります。**全部まとめて 1 回で** 入れてください。
+   - 前の版にしか無いファイルを消す必要はありません(v2.0.0 で消えたファイルはありません)。
+3. 数分後、iPhone でアプリを開けば自動で新しい版になります(開いた直後は前の版で、すぐ切り替わります。設定の一番下のバージョンで確かめられます)。
+   - 開いたときに「アプリを起動できませんでした」と出たら、ファイルの一部が読めていません。電波の良い所で「開き直す」を押し、直らなければ GitHub に `css`・`js` フォルダの中身が全部あるか確かめてください(記録は消えていません)。
 
 ## 6. 注意
 
@@ -137,20 +148,31 @@ tests/                … 動作確認用のテスト(公開には不要。ア�
 
 ## 開発メモ(AI に直してもらうとき)
 
-- `index.html` の `<script id="core">` には DOM に触れない純粋関数(計算・日付・検証・値段の比較)、`<script id="app">` には画面と保存の処理があります。仕様は `仕様書.md`。
+- 仕様は `仕様書.md`。ファイルの役割は 2 章、JS の分け方と import の向きは 9 章にあります。
+  - `js/core/` … DOM に触れない純粋関数(計算・日付・検証・値段の比較)。`js/core/index.js` がまとめて公開します。
+  - `js/app/` … 画面と保存の処理。1 つの機能が 1 つのファイルです(例: 買い物タブは `js/app/shopping.js`)。各ファイルの先頭に、何のファイルかが書いてあります。
+  - `js/main.js` … 起動と、すべてのボタンのイベント登録。
+  - 見た目は `css/style.css`(v1.3.0 の `<style>` をそのまま移したもの)。
+  - **`css/` や `js/` にファイルを足したら、`sw.js` の `PRECACHE` にも足してください**(足さないと圏外で開いたときにその部品が読めません。テストの `offline.js` が足し忘れを見つけます)。
 - 保存データは localStorage の `pfc.v1` キーに JSON で入っています(形式は仕様書 4 章・12 章・13.5)。`version` は 1 のままです。
 - セット機能(v1.1.0)は仕様書 12 章。`sets` 配列に入っていて、中身はマイ食品の id と量だけ(値は毎回マイ食品から計算)。
 - タブ構成・買い物・値段・自動更新(v1.2.0)は仕様書 13 章。
   - マイ食品に `pending`(PFC未登録)と `priceBasis`(値段の単位)、新しく `stores`(店)・`goods`(食品ではない品)・`prices`(品 × 店の最新の値段)・`shopping`(買い物リスト)の配列が増えました。
   - 「よく買うもの」の並び順のため、マイ食品と goods に `shopCount`(買い物リストに入れた回数。1 以上のときだけ)を持たせています(仕様書に無い追加の項目)。
-- まとめて記録(v1.3.0)は仕様書 14 章。データ構造の変更はありません。セット編集シートの行(`DRAFTS` / `renderDraftItems`)・食品の選択シート(`openFoodPicker('set' | 'batch')`)・記録の追加(`pushEntries` / `addEntries`)を共用しています。
-- テストは `tests/` にあります(Mac + Node.js 22 + Google Chrome が必要)。全部まとめて流すときは:
+- まとめて記録(v1.3.0)は仕様書 14 章。データ構造の変更はありません。セット編集シートの行(`DRAFTS` / `renderDraftItems`。`js/app/drafts.js`)・食品の選択シート(`openFoodPicker('set' | 'batch')`)・記録の追加(`pushEntries` / `addEntries`。`js/app/record.js`)を共用しています。
+- 土台の作り直し(v2.0.0)は仕様書 15 章。マイ食品から入れた記録に、量と基準(`amount` / `basis`)が付くようになりました(将来の「食費の見通し」のための準備。画面には出ません。仕様書 4 章)。
+- テストは `tests/` にあります(Mac + Node.js 22 + Google Chrome が必要。ほかに入れるものはありません)。全部まとめて流すときは:
   ```
   cd tests
-  TZ=Asia/Tokyo node unit.js && TZ=Asia/Tokyo node sets-unit.js && TZ=Asia/Tokyo node v12-unit.js && TZ=Asia/Tokyo node batch-unit.js && TZ=America/Los_Angeles node v12-unit.js
-  node scenario.js && node robust.js && TZ=Asia/Tokyo node fixes.js && node sets.js && node shots.js && node tabs.js && node shopping.js && node pfccols.js && node typing.js && node batch.js
+  TZ=Asia/Tokyo node unit.js && TZ=Asia/Tokyo node sets-unit.js && TZ=Asia/Tokyo node v12-unit.js && TZ=Asia/Tokyo node batch-unit.js && TZ=Asia/Tokyo node v2-unit.js && TZ=America/Los_Angeles node unit.js && TZ=America/Los_Angeles node v12-unit.js
+  node scenario.js && node robust.js && TZ=Asia/Tokyo node fixes.js && node sets.js && node tabs.js && node shopping.js && node shots.js && node pfccols.js && node typing.js && node batch.js && node v2.js && node offline.js && node update-path.js && node delivery.js
   ```
-  - `unit.js` / `sets-unit.js` / `v12-unit.js` / `batch-unit.js` … core の関数のテスト(ブラウザ不要)
+  - `unit.js` / `sets-unit.js` / `v12-unit.js` / `batch-unit.js` / `v2-unit.js` … core の関数のテスト(ブラウザ不要。`js/core/` をそのまま読み込みます: `tests/tools/load-core.js`)
   - `scenario.js` / `robust.js` / `fixes.js` / `sets.js` / `shots.js` … v1.0〜v1.1 の画面のテスト
   - `tabs.js` … タブ・ホーム・PFC未登録・自動更新、`shopping.js` … 買い物リスト・値段・店の管理・書き出し/読み込み、`batch.js` … まとめて記録
+  - `v2.js` … v2.0.0 の直し(歯車の SVG・自動フォーカスしない・記録の量と基準)
+  - `offline.js` … `sw.js` の `PRECACHE` に足りないファイルが無いか、初回に開いたあと圏外でも全部のタブが動くか
+  - `update-path.js` … 公開中の v1.3.0(`tests/fixtures/v1.3.0/`)を開いている状態から、自動更新と「更新を確認」で今の版に切り替わり、データが残るか
+  - `delivery.js` … GitHub Pages と同じ配り方(10 分キャッシュ)で、電波が弱くても起動がネットワークを待たないか、新しい版を上げたあとに古い js と新しい index.html が混ざらないか、js が 1 つ足りない版を上げたときに「アプリを起動できませんでした」が出るか
+  - バージョン番号はテストに書かず、`js/core/constants.js` の `APP_VERSION` を読んで比べます(上げるときに直すのは `constants.js` と `sw.js` だけ)。
   - スクリーンショットは `tests/out/` に保存されます。Chrome が残ったときは `pkill -f "pfc-cdp-"`。
