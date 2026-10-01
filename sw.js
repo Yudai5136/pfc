@@ -1,11 +1,12 @@
 /* PFC管理 Service Worker
  * 役割: 圏外でもアプリを開けるように、必要ファイルをキャッシュしておく。
  * 更新の仕組み: CACHE 名を APP_VERSION と合わせて変える → 新しい SW が「待機」状態になる
- *   → アプリ側の「更新」操作で SKIP_WAITING メッセージを受け取ってから切り替わる。
+ *   → アプリ側が SKIP_WAITING メッセージを送ってから切り替わる(v1.2.0 から: 入力中でなければ自動で送る。
+ *     入力中ならシートを閉じたときに送る。「更新」ボタン・設定の「更新を確認」でも送る)。
  */
 'use strict';
 
-const CACHE = 'pfc-v1.1.0'; // リリースごとに index.html の APP_VERSION と合わせて更新する
+const CACHE = 'pfc-v1.2.0'; // リリースごとに index.html の APP_VERSION と合わせて更新する
 
 // 事前にキャッシュするファイル(すべて相対パス。GitHub Pages のサブパス配信に対応)
 const PRECACHE = [

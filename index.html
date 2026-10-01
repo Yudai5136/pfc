@@ -48,6 +48,11 @@
   --vvh: 100%;            /* visualViewport の高さ(キーボード表示時に縮む) */
   --vvt: 0px;             /* visualViewport の上端オフセット */
   --alert-h: 0px;         /* 画面上部に固定表示中の警告バーの高さ(JS が測って入れる) */
+  --tabbar-bg: rgba(249,249,251,.96); /* 下のタブバーの背景 */
+  --badge-bg: #c8102e;    /* タブ・切替の件数バッジ(白文字が 4.5:1 以上) */
+  --tabbar-h: 54px;       /* タブバーの高さ(ホームバー分の余白は含まない) */
+  /* 画面下の固定要素(＋ 記録する・トースト・更新バー)の基準になる下端。タブバー + ホームバー分。タブバーを隠す画面(設定)では body.no-tabbar で上書き */
+  --tb: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -77,6 +82,8 @@
     --backdrop: rgba(0,0,0,.6);
     --danger-bg: rgba(255,77,94,.12);
     --shadow: none;
+    --tabbar-bg: rgba(22,22,24,.96);
+    --badge-bg: #d0142f;
   }
 }
 
@@ -106,7 +113,7 @@ h2 { font-size: 13px; color: var(--muted); letter-spacing: .02em; margin: 0 0 8p
 .small { font-size: 13px; }
 
 /* ==========================================================================
-   ビュー(メイン / 設定 / マイ食品 / セット)とヘッダ
+   ビュー(タブ: 記録 / マイ食品 / ホーム / 買い物 / 値段、と設定)とヘッダ
    ========================================================================== */
 /* 警告バー(#alerts)が出ているときはその分だけ下げる。safe-area の上余白は「いちばん上にある要素」だけが取る */
 .view { min-height: 100%; padding-top: var(--alert-h); }
@@ -137,13 +144,16 @@ body.has-alert .topbar { padding-top: 6px; } /* 上余白は警告バー側が�
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .date-btn:active { background: var(--track); }
+/* 下余白は「タブバー + ホームバー(--tb)」の上に、固定の「＋ 記録する」(高さ 54px + 上下 12px)が隠さない分を足す */
 .content {
   max-width: 640px; margin: 0 auto;
-  padding: 12px 16px calc(96px + env(safe-area-inset-bottom));
+  padding: 12px 16px calc(var(--tb) + 84px);
 }
-.content.no-fab { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
-/* 更新バーが出ている間は、一覧の最後がバーに隠れないよう下余白を増やす(バー上端 ≈ 136px + safe-area) */
-body.has-update .content, body.has-update .content.no-fab { padding-bottom: calc(160px + env(safe-area-inset-bottom)); }
+.content.no-fab { padding-bottom: calc(var(--tb) + 24px); }
+/* 更新バーが出ている間は、一覧の最後がバーに隠れないよう下余白を増やす(バー上端 ≈ --tb + 136px) */
+body.has-update .content, body.has-update .content.no-fab { padding-bottom: calc(var(--tb) + 150px); }
+/* 設定画面ではタブバーを隠す。固定要素の基準はホームバーの上だけになる */
+body.no-tabbar { --tb: env(safe-area-inset-bottom); }
 .card {
   background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow);
 }
@@ -180,27 +190,42 @@ body.has-update .content, body.has-update .content.no-fab { padding-bottom: calc
 .stat .consumed { font-size: 30px; font-weight: 700; line-height: 1.1; }
 .stat .target { font-size: 17px; color: var(--muted); }
 .stat .unit { font-size: 15px; color: var(--muted); }
-.stat .bar { display: flex; height: 12px; border-radius: 6px; background: var(--track); overflow: hidden; }
-.stat .bar-fill { height: 100%; border-radius: 6px 0 0 6px; transition: width .25s ease; }
-.stat .bar-over { height: 100%; transition: width .25s ease; }
+/* .meter = 栄養素 1 つ分のバー(ホームの大きいバー .stat と、記録タブの細い要約 .rec-stat で共用) */
+.meter .bar { display: flex; height: 12px; border-radius: 6px; background: var(--track); overflow: hidden; }
+.meter .bar-fill { height: 100%; border-radius: 6px 0 0 6px; transition: width .25s ease; }
+.meter .bar-over { height: 100%; transition: width .25s ease; }
 /* 栄養素ごとの基本色(data-n で指定。ID セレクタより弱くしておき、下の data-status で上書きできるようにする) */
-.stat[data-n="p"] .label, .stat[data-n="p"] .consumed { color: var(--p); }
-.stat[data-n="f"] .label, .stat[data-n="f"] .consumed { color: var(--f); }
-.stat[data-n="c"] .label, .stat[data-n="c"] .consumed { color: var(--c); }
-.stat[data-n="p"] .bar-fill { background: var(--p); }
-.stat[data-n="f"] .bar-fill { background: var(--f); }
-.stat[data-n="c"] .bar-fill { background: var(--c); }
+.meter[data-n="p"] .label, .meter[data-n="p"] .consumed { color: var(--p); }
+.meter[data-n="f"] .label, .meter[data-n="f"] .consumed { color: var(--f); }
+.meter[data-n="c"] .label, .meter[data-n="c"] .consumed { color: var(--c); }
+.meter[data-n="p"] .bar-fill { background: var(--p); }
+.meter[data-n="f"] .bar-fill { background: var(--f); }
+.meter[data-n="c"] .bar-fill { background: var(--c); }
 /* 達成(緑) / 超過(赤) は data-status で上書き(上の基本色より後に書く) */
-.stat[data-status="done"] .consumed, .stat[data-status="done"] .remaining { color: var(--done); }
-.stat[data-status="done"] .bar-fill { background: var(--done); }
-.stat[data-status="done"] .bar-over { background: repeating-linear-gradient(135deg, var(--done) 0 4px, rgba(0,0,0,.25) 4px 8px); }
-.stat[data-status="over"] .consumed, .stat[data-status="over"] .remaining { color: var(--over); font-weight: 600; }
-.stat[data-status="over"] .bar-over { background: repeating-linear-gradient(135deg, var(--over) 0 4px, var(--over-2) 4px 8px); }
+.meter[data-status="done"] .consumed, .meter[data-status="done"] .remaining { color: var(--done); }
+.meter[data-status="done"] .bar-fill { background: var(--done); }
+.meter[data-status="done"] .bar-over { background: repeating-linear-gradient(135deg, var(--done) 0 4px, rgba(0,0,0,.25) 4px 8px); }
+.meter[data-status="over"] .consumed, .meter[data-status="over"] .remaining { color: var(--over); font-weight: 600; }
+.meter[data-status="over"] .bar-over { background: repeating-linear-gradient(135deg, var(--over) 0 4px, var(--over-2) 4px 8px); }
 .stat .sep, .stat-kcal .sep { font-size: 17px; color: var(--muted); }
 .stat-kcal { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .stat-kcal .consumed { font-size: 24px; font-weight: 700; }
 .stat-kcal .target, .stat-kcal .sep { font-size: 16px; color: var(--muted); }
 .stat-kcal .note { font-size: 12px; color: var(--muted); }
+
+/* 記録タブの要約(1 枚のカードに細いバーを 3 本): 「P ▬▬▬ 123/150g あと 27g」 */
+.rec-stats { padding: 10px 14px; }
+.rec-stat { display: grid; grid-template-columns: 18px minmax(0, 1fr) 100px 66px; align-items: center; gap: 8px; min-height: 30px; } /* 数字の列を固定幅にして 3 本のバーの長さをそろえる */
+.rec-stat .label { font-size: 14px; font-weight: 700; text-align: center; }
+.rec-stat .bar { height: 8px; border-radius: 4px; }
+.rec-stat .nums { font-size: 15px; white-space: nowrap; text-align: right; }
+.rec-stat .consumed { font-weight: 700; }
+.rec-stat .sep, .rec-stat .target, .rec-stat .unit { color: var(--muted); }
+.rec-stat .remaining { font-size: 12px; color: var(--muted); text-align: right; white-space: nowrap; }
+.rec-kcal { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 15px; }
+.rec-kcal .consumed { font-size: 18px; font-weight: 700; }
+.rec-kcal .sep, .rec-kcal .target, .rec-kcal .unit { color: var(--muted); }
+.rec-kcal .label { font-size: 13px; color: var(--muted); }
 
 /* ==========================================================================
    直近7日
@@ -230,7 +255,7 @@ body.has-update .content, body.has-update .content.no-fab { padding-bottom: calc
 /* ==========================================================================
    クイック追加(チップ)
    ========================================================================== */
-.quick h2 { margin: 4px 0 8px; }
+.quick h2, .home-quick h2 { margin: 4px 0 8px; }
 .chips {
   display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
   padding: 2px 16px 10px; margin: 0 -16px 4px; scrollbar-width: none;
@@ -264,6 +289,13 @@ body.has-update .content, body.has-update .content.no-fab { padding-bottom: calc
 .entry .name.untitled { color: var(--muted); }
 .entry .pfc, .food .pfc, .set .pfc, .pick .pfc { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pfc b { font-weight: 600; }
+/* P/F/C を等幅の3列で表示する。各列の幅を固定するので、桁数が変わっても F・C の始まる位置がずれない */
+.pfc-cols { display: inline-flex; column-gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; vertical-align: top; }
+.pfc-cols .m { display: inline-flex; align-items: baseline; }
+.pfc-cols .m i { font-style: normal; width: 0.85em; }         /* 「P」「F」「C」の幅を固定 */
+.pfc-cols .m b { min-width: 4.8ch; }                          /* 数字の幅を確保(「1,000」「999.9」まで列がずれない) */
+.pfc .pfc-note { margin-left: 8px; }                         /* 「1杯あたり」などの補足は列の後ろに置く */
+.set-item .pfc-cols, .set-add-item .pfc-cols { column-gap: 6px; }  /* セットの行は量の入力欄があって狭いので、列の間を少しだけ詰める */
 .pfc .vp { color: var(--p); } .pfc .vf { color: var(--f); } .pfc .vc { color: var(--c); }
 .entry .kcal, .food .kcal, .set .kcal, .pick .kcal { flex: 0 0 auto; font-size: 15px; font-weight: 600; white-space: nowrap; }
 .entry .kcal small, .food .kcal small, .set .kcal small, .pick .kcal small { font-size: 11px; font-weight: 400; color: var(--muted); margin-left: 2px; }
@@ -276,7 +308,7 @@ body.has-update .content, body.has-update .content.no-fab { padding-bottom: calc
 .set-item:first-child, .set-add-item:first-child { border-top: 0; }
 .set-item .body, .set-add-item .body { flex: 1; min-width: 0; }
 .set-item .name, .set-add-item .name { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.set-item .pfc, .set-add-item .pfc { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.set-item .pfc, .set-add-item .pfc { display: flex; flex-wrap: wrap; column-gap: 8px; font-size: 12px; color: var(--muted); } /* 狭いので kcal は入りきらなければ次の行へ(数字は切らない) */
 .qty { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
 .qty input[type="number"] { width: 78px; text-align: right; padding: 8px; } /* 全体の input 指定(width:100%)より強く */
 .qty .unit { flex: 0 0 auto; width: 60px; font-size: 15px; line-height: 1.2; color: var(--muted); overflow-wrap: anywhere; } /* 幅を固定して量の入力欄の位置をそろえる。長い単位は省略せず折り返す */
@@ -304,12 +336,220 @@ input.bad { border-color: var(--over); }
 
 /* 画面下に固定の「＋ 記録する」ボタン */
 .fab {
-  position: fixed; left: 16px; right: 16px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 15;
+  position: fixed; left: 16px; right: 16px; bottom: calc(var(--tb) + 12px); z-index: 15;
   max-width: 608px; margin: 0 auto;
   height: 54px; border-radius: 27px; background: var(--accent-fill); color: var(--accent-text);
   font-size: 18px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.25);
 }
 .fab:active { filter: brightness(.9); }
+
+/* ==========================================================================
+   タブバー(13.1)。画面の一番下に常に表示。シート(z=40〜)の背景がこれを覆うので、シート表示中は押せない
+   ========================================================================== */
+#tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 25;
+  display: flex; align-items: stretch;
+  height: var(--tb); padding: 0 4px env(safe-area-inset-bottom);
+  background: var(--tabbar-bg); border-top: 1px solid var(--line);
+  -webkit-backdrop-filter: saturate(180%) blur(12px); backdrop-filter: saturate(180%) blur(12px);
+}
+body.no-tabbar #tabbar { display: none; }
+.tab {
+  flex: 1 1 0; min-width: 0; min-height: 44px; position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  color: var(--muted); font-size: 11px; font-weight: 600; line-height: 1.1;
+}
+.tab .tab-icon { width: 26px; height: 30px; display: flex; align-items: center; justify-content: center; } /* 高さはホームの丸い下地とそろえ、ラベルの位置を全タブで同じにする */
+.tab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tab .tab-label { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab[aria-current="page"] { color: var(--accent); }
+/* ホーム(中央)は丸い下地で少し強調する */
+.tab-home .tab-icon { width: 44px; height: 30px; border-radius: 15px; background: var(--field); }
+.tab-home[aria-current="page"] .tab-icon { background: var(--accent-fill); color: var(--accent-text); }
+.tab .badge, .seg .badge {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--badge-bg); color: #ffffff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.tab .badge { position: absolute; top: 3px; left: calc(50% + 6px); }
+.seg .badge { display: inline-block; margin-left: 4px; }
+
+/* 切替(セグメント)。マイ食品タブの「マイ食品 / セット / PFC未登録」、グラフの「kcal / P / F / C」などで共用 */
+.segmented { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--track); margin-bottom: 12px; }
+.seg {
+  flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 6px; border-radius: 9px;
+  font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.seg.on { background: var(--card); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+/* ヘッダの左端の空き(タイトルを中央に保つ) */
+.topbar-spacer { min-width: 44px; }
+
+/* ==========================================================================
+   ホーム(13.2): 1週間の平均・推移グラフ・入力エリア
+   ========================================================================== */
+.avg { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-height: 36px; padding: 6px 0; border-top: 1px solid var(--line); }
+.avg:first-child { border-top: 0; }
+.avg .label { font-size: 14px; font-weight: 600; }
+.avg .vals { font-size: 14px; color: var(--muted); white-space: nowrap; }
+.avg .avg-val { font-size: 20px; font-weight: 700; color: var(--text); }
+.avg[data-n="p"] .label, .avg[data-n="p"] .avg-val { color: var(--p); }
+.avg[data-n="f"] .label, .avg[data-n="f"] .avg-val { color: var(--f); }
+.avg[data-n="c"] .label, .avg[data-n="c"] .avg-val { color: var(--c); }
+.avg[data-status="done"] .avg-val { color: var(--done); }
+.avg[data-status="over"] .avg-val { color: var(--over); }
+#week-avg-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 12px 8px; margin: 0; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.card-head h2 { margin: 0; }
+.chart-modes { flex: 0 1 220px; margin: 0; }
+.chart-modes .seg { padding: 0 2px; }
+#week-chart-svg svg { display: block; width: 100%; height: auto; overflow: visible; font-family: inherit; }
+#week-chart .cbar { fill: var(--accent); }
+#week-chart svg[data-mode="p"] .cbar { fill: var(--p); }
+#week-chart svg[data-mode="f"] .cbar { fill: var(--f); }
+#week-chart svg[data-mode="c"] .cbar { fill: var(--c); }
+/* 達成判定の色は、P/F/C の色(svg[data-mode] .cbar)より優先する(詳細度を揃えて後に書く) */
+#week-chart svg .cbar[data-status="done"] { fill: var(--done); }
+#week-chart svg .cbar[data-status="over"] { fill: var(--over); }
+#week-chart .ctarget { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 4 3; opacity: .75; }
+#week-chart .cbase { stroke: var(--line); stroke-width: 1; }
+#week-chart .cval { fill: var(--text); font-size: 11px; font-weight: 600; text-anchor: middle; }
+#week-chart .cwd { fill: var(--muted); font-size: 12px; text-anchor: middle; }
+#week-chart .cwd.today { fill: var(--accent); font-weight: 700; }
+.chart-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.chart-legend i { display: inline-block; width: 20px; border-top: 2px dashed var(--text); opacity: .75; }
+.home-quick .section-title { font-size: 17px; font-weight: 700; color: var(--text); margin: 18px 0 10px; letter-spacing: 0; }
+#btn-home-add { margin-top: 6px; }
+
+/* ==========================================================================
+   マイ食品タブ: PFC未登録の一覧(13.4)
+   ========================================================================== */
+.pending { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 0; border-top: 1px solid var(--line); }
+.pending:first-child { border-top: 0; }
+.pending .body { flex: 1; min-width: 0; }
+.pending .name { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pending .sub { display: block; font-size: 12px; color: var(--muted); }
+.btn-fill-pfc {
+  flex: 0 0 auto; min-height: 44px; padding: 0 14px; border-radius: 10px;
+  background: var(--accent-fill); color: var(--accent-text); font-size: 15px; font-weight: 600;
+}
+.btn-fill-pfc:active { filter: brightness(.9); }
+#pending-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 20px 8px; margin: 0; }
+
+/* ==========================================================================
+   買い物タブ(13.6)・値段タブ(13.7)・店の管理
+   ========================================================================== */
+/* 入力欄の右にボタンを並べる行(追加欄・店の選択・新しい店) */
+.input-row { display: flex; gap: 8px; align-items: stretch; }
+.input-row > input, .input-row > select { flex: 1 1 auto; width: auto; min-width: 0; }
+.btn.btn-inline { width: auto; flex: 0 0 auto; padding: 0 14px; font-size: 16px; } /* .btn(幅いっぱい)より強く */
+.btn.btn-on-bg { background: var(--card); box-shadow: var(--shadow); } /* カードの外(画面の背景の上)に置く控えめなボタン */
+.empty-note { color: var(--muted); font-size: 14px; text-align: center; padding: 20px 8px; margin: 0; }
+/* 小さな印: PFC未登録 / 最安 */
+.tag { display: inline-block; flex: 0 0 auto; padding: 1px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; line-height: 18px; white-space: nowrap; vertical-align: 1px; }
+.tag-pending { background: var(--warn-bg); color: var(--warn-text); }
+.tag-best { color: var(--done); border: 1px solid currentColor; line-height: 16px; }
+.note-pending { background: var(--warn-bg); color: var(--warn-text); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0 0 12px; }
+
+/* 追加欄と候補 */
+.shop-add { padding: 12px; }
+.suggest-list { margin-top: 8px; border-top: 1px solid var(--line); }
+.suggest {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 6px 4px;
+  text-align: left; border-bottom: 1px solid var(--line);
+}
+.suggest:last-child { border-bottom: 0; }
+.suggest:active { background: var(--field); }
+.suggest .name { flex: 1; min-width: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.suggest .kind { flex: 0 0 auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.suggest .in-list { color: var(--accent); }
+.shop-new { margin-top: 10px; }
+.shop-new .field-label { overflow-wrap: anywhere; }
+.shop-new .segmented, #price-new-kind { margin-bottom: 4px; }
+#price-new-kind { margin-bottom: 12px; }
+
+/* 「安い店ごとに分ける」のスイッチ */
+.switch-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px;
+  padding: 0 14px; margin: 4px 0 12px; border-radius: 14px; background: var(--card); box-shadow: var(--shadow); font-size: 16px; text-align: left;
+}
+.switch { position: relative; flex: 0 0 auto; width: 51px; height: 31px; border-radius: 16px; background: var(--track); transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .2s; }
+.switch-row[aria-checked="true"] .switch { background: var(--done); }
+.switch-row[aria-checked="true"] .switch::after { transform: translateX(20px); }
+
+/* 買い物リストの行: チェック / 品名・最安の店 / 数量メモ */
+.shop-card { padding: 4px 14px; }
+.shop-item { display: flex; align-items: center; gap: 4px; min-height: 56px; border-top: 1px solid var(--line); }
+.shop-list-head + .shop-item, .shop-item:first-child { border-top: 0; }
+.shop-check-wrap { flex: 0 0 auto; width: 44px; min-height: 52px; margin-left: -8px; display: flex; align-items: center; justify-content: center; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.shop-check { width: 24px; height: 24px; margin: 0; accent-color: var(--done); }
+.shop-body { flex: 1; min-width: 0; min-height: 52px; padding: 6px 0; text-align: left; display: flex; flex-direction: column; justify-content: center; }
+.shop-body .line1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.shop-body .name { min-width: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shop-best { display: flex; gap: 4px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.shop-best[hidden] { display: none; }
+/* 店名が長くても値段は切らない: 店名だけを「…」で詰める */
+.shop-best .best-label, .shop-best .best-val { flex: none; }
+.shop-best .best-store { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.shop-qty {
+  flex: 0 0 auto; max-width: 34%; min-width: 44px; min-height: 44px; padding: 0 8px; border-radius: 10px;
+  font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;
+}
+.shop-qty.empty { color: var(--accent); }
+.shop-qty:active, .shop-body:active { background: var(--field); }
+/* 買った行は薄くして下へ */
+.shop-item.done .shop-body .name { color: var(--muted); text-decoration: line-through; }
+.shop-item.done .shop-best, .shop-item.done .shop-qty { opacity: .75; }
+.shop-list-head { font-size: 13px; font-weight: 600; color: var(--muted); padding: 12px 0 4px; border-top: 1px solid var(--line); }
+.shop-list-head:first-child { border-top: 0; padding-top: 8px; }
+.shop-list-head .count { font-weight: 400; margin-left: 4px; }
+#btn-shop-clear { margin-bottom: 4px; }
+
+/* 値段タブ */
+#price-search { margin-bottom: 10px; }
+.price-tools { display: flex; gap: 8px; align-items: stretch; margin-bottom: 12px; }
+.price-tools .segmented { flex: 1 1 auto; margin: 0; }
+.price-tools .btn-inline { min-height: 50px; }
+.price-card { padding: 0; overflow: hidden; }
+.price-toggle { display: block; width: 100%; padding: 12px 14px; text-align: left; min-height: 44px; }
+.price-toggle:active { background: var(--field); }
+.price-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.price-head .name { flex: 1; min-width: 0; font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.price-head .unit-label { flex: 0 0 auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.price-head .chev { flex: 0 0 auto; color: var(--muted); font-size: 18px; line-height: 1; transition: transform .2s; }
+.price-card.open .price-head .chev { transform: rotate(90deg); }
+.price-best { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; }
+.price-best .store-name { font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
+.price-best .val { font-size: 24px; font-weight: 700; color: var(--done); line-height: 1.2; }
+.price-best .val small { font-size: 14px; font-weight: 600; margin-left: 1px; }
+.price-best .updated { font-size: 12px; color: var(--muted); margin-left: auto; white-space: nowrap; }
+.price-best .count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.price-rows { border-top: 1px solid var(--line); padding: 0 14px; }
+.price-row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 52px; padding: 6px 0; text-align: left; border-top: 1px solid var(--line); }
+.price-row:first-child { border-top: 0; }
+.price-row:active { background: var(--field); }
+.price-row .rank { flex: 0 0 34px; font-size: 13px; color: var(--muted); text-align: center; }
+.price-row .body { flex: 1; min-width: 0; }
+.price-row .store-name { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.price-row .sub { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.price-row .val { flex: 0 0 auto; font-size: 16px; font-weight: 700; white-space: nowrap; }
+.price-row.best .val { color: var(--done); }
+#btn-price-add { margin-top: 4px; }
+
+/* 買ったシート・値段シートの入力 */
+.new-store { margin: -4px 0 12px; }
+.price-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.price-inputs.single { grid-template-columns: 1fr; }
+.price-live { min-height: 22px; font-size: 15px; color: var(--muted); margin: -2px 0 6px; }
+.price-live b { color: var(--done); font-size: 18px; }
+
+/* 店の管理 */
+.store { display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 6px 0; border-top: 1px solid var(--line); }
+.store:first-child { border-top: 0; }
+.store .store-name { flex: 1 1 auto; min-width: 0; }
+.store .store-count { flex: 0 0 auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.store-delete { flex: 0 0 auto; min-height: 44px; min-width: 44px; padding: 0 10px; border-radius: 10px; color: var(--over); background: var(--danger-bg); font-size: 15px; font-weight: 600; }
 
 /* ==========================================================================
    ボタン・フォーム部品
@@ -407,7 +647,7 @@ textarea { min-height: 120px; font-size: 16px; font-family: ui-monospace, Menlo,
    トースト・更新バー
    ========================================================================== */
 .toast {
-  position: fixed; left: 16px; right: 16px; bottom: calc(78px + env(safe-area-inset-bottom)); z-index: 50;
+  position: fixed; left: 16px; right: 16px; bottom: calc(var(--tb) + 78px); z-index: 50;
   max-width: 608px; margin: 0 auto;
   background: var(--toast-bg); color: var(--toast-text); border-radius: 12px;
   padding: 6px 6px 6px 14px; display: flex; align-items: center; gap: 8px; font-size: 15px;
@@ -415,12 +655,12 @@ textarea { min-height: 120px; font-size: 16px; font-family: ui-monospace, Menlo,
 }
 .toast span { flex: 1; }
 .toast button { min-height: 44px; padding: 0 14px; border-radius: 8px; color: var(--toast-accent); font-weight: 700; font-size: 15px; }
-body.has-update .toast { bottom: calc(144px + env(safe-area-inset-bottom)); } /* 更新バーと重ならないよう上にずらす */
+body.has-update .toast { bottom: calc(var(--tb) + 144px); } /* 更新バーと重ならないよう上にずらす */
 /* シートを開いている間は画面上部に出す(シートの保存/キャンセルなどのボタンを隠さない)。警告バーがあればその直下 */
 body.lock .toast { bottom: auto; top: calc(var(--vvt) + var(--alert-h) + 12px + env(safe-area-inset-top)); }
 body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /* 上余白は警告バー側が取っている */
 .update-bar {
-  position: fixed; left: 16px; right: 16px; bottom: calc(78px + env(safe-area-inset-bottom)); z-index: 30;
+  position: fixed; left: 16px; right: 16px; bottom: calc(var(--tb) + 78px); z-index: 30;
   max-width: 608px; margin: 0 auto;
   background: var(--card); border: 1px solid var(--line); border-radius: 12px;
   padding: 6px 6px 6px 14px; display: flex; align-items: center; gap: 8px; font-size: 15px; box-shadow: 0 4px 14px rgba(0,0,0,.2);
@@ -439,48 +679,45 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
   <div id="load-warning" class="alert alert-warn" role="alert" hidden><span id="load-warning-text"></span><button id="btn-load-warning-close" aria-label="閉じる">×</button></div>
 </div>
 
-<!-- ===================== メイン画面 ===================== -->
-<section id="view-main" class="view">
+<!-- ===================== 記録タブ(13.3): 日付移動・要約・クイック追加・記録一覧 ===================== -->
+<section id="view-record" class="view" hidden>
   <header class="topbar">
     <button id="btn-prev-day" class="icon-btn" aria-label="前の日">‹</button>
     <button id="date-label" class="date-btn num">今日</button>
     <button id="btn-next-day" class="icon-btn" aria-label="次の日">›</button>
-    <button id="btn-settings" class="icon-btn" aria-label="設定">⚙</button>
+    <button id="btn-settings" class="icon-btn btn-gear" aria-label="設定">⚙</button>
   </header>
-  <button id="backup-banner" class="banner" hidden>バックアップしていません。設定から書き出せます ›</button>
   <main class="content">
-    <section class="card stats" aria-label="今日の摂取量">
-      <div id="stat-p" class="stat" data-n="p" data-status="progress">
-        <div class="row1"><span class="label">たんぱく質</span><span class="remaining num">-</span></div>
-        <div class="row2 num"><span class="consumed">0</span><span class="sep">/</span><span class="target">0</span><span class="unit">g</span></div>
+    <section id="rec-stats" class="card rec-stats" aria-label="この日の摂取量">
+      <div id="rec-stat-p" class="rec-stat meter" data-n="p" data-status="progress">
+        <span class="label" aria-hidden="true">P</span>
         <div class="bar" aria-hidden="true"><div class="bar-fill" style="width: 0%"></div><div class="bar-over" style="width: 0%"></div></div>
+        <span class="nums num"><span class="consumed">0</span><span class="sep"> / </span><span class="target">0</span><span class="unit">g</span></span>
+        <span class="remaining num">-</span>
       </div>
-      <div id="stat-f" class="stat" data-n="f" data-status="progress">
-        <div class="row1"><span class="label">脂質</span><span class="remaining num">-</span></div>
-        <div class="row2 num"><span class="consumed">0</span><span class="sep">/</span><span class="target">0</span><span class="unit">g</span></div>
+      <div id="rec-stat-f" class="rec-stat meter" data-n="f" data-status="progress">
+        <span class="label" aria-hidden="true">F</span>
         <div class="bar" aria-hidden="true"><div class="bar-fill" style="width: 0%"></div><div class="bar-over" style="width: 0%"></div></div>
+        <span class="nums num"><span class="consumed">0</span><span class="sep"> / </span><span class="target">0</span><span class="unit">g</span></span>
+        <span class="remaining num">-</span>
       </div>
-      <div id="stat-c" class="stat" data-n="c" data-status="progress">
-        <div class="row1"><span class="label">炭水化物</span><span class="remaining num">-</span></div>
-        <div class="row2 num"><span class="consumed">0</span><span class="sep">/</span><span class="target">0</span><span class="unit">g</span></div>
+      <div id="rec-stat-c" class="rec-stat meter" data-n="c" data-status="progress">
+        <span class="label" aria-hidden="true">C</span>
         <div class="bar" aria-hidden="true"><div class="bar-fill" style="width: 0%"></div><div class="bar-over" style="width: 0%"></div></div>
+        <span class="nums num"><span class="consumed">0</span><span class="sep"> / </span><span class="target">0</span><span class="unit">g</span></span>
+        <span class="remaining num">-</span>
       </div>
-      <div id="stat-kcal" class="stat-kcal">
-        <div class="num"><span class="consumed">0</span> <span class="sep">/</span> <span class="target">0</span> <span class="unit muted">kcal</span></div>
-        <span class="note">P×4＋F×9＋C×4 の計算値</span>
+      <div id="rec-stat-kcal" class="rec-kcal">
+        <span class="num"><span class="consumed">0</span><span class="sep"> / </span><span class="target">0</span> <span class="unit">kcal</span></span>
+        <span class="label">P×4＋F×9＋C×4</span>
       </div>
-    </section>
-
-    <section class="card">
-      <h2>直近7日の達成率</h2>
-      <div id="week-strip" role="group" aria-label="直近7日の達成率(タップでその日へ)"></div>
     </section>
 
     <section class="quick">
       <h2>セット</h2>
-      <div id="set-chips" class="chips"><button type="button" id="btn-sets-manage" class="chip manage" aria-label="セットを管理"><span class="name">＋ セットを管理</span></button></div>
+      <div id="set-chips" class="chips"><button type="button" id="btn-sets-manage" class="chip manage" data-manage="sets" aria-label="セットを管理"><span class="name">＋ セットを管理</span></button></div>
       <h2>マイ食品</h2>
-      <div id="food-chips" class="chips"><button type="button" id="btn-foods-manage" class="chip manage" aria-label="マイ食品を管理"><span class="name">＋ マイ食品を管理</span></button></div>
+      <div id="food-chips" class="chips"><button type="button" id="btn-foods-manage" class="chip manage" data-manage="foods" aria-label="マイ食品を管理"><span class="name">＋ マイ食品を管理</span></button></div>
       <h2>最近の記録</h2>
       <div id="recent-chips" class="chips"></div>
     </section>
@@ -494,10 +731,190 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
   <button id="btn-add" class="fab" aria-label="記録する">＋ 記録する</button>
 </section>
 
+<!-- ===================== マイ食品タブ(13.4): マイ食品 / セット / PFC未登録 ===================== -->
+<section id="view-foods" class="view" hidden>
+  <header class="topbar topbar-3">
+    <span class="topbar-spacer"></span>
+    <h1 class="title">マイ食品</h1>
+    <button id="btn-settings-foods" class="icon-btn btn-gear" aria-label="設定">⚙</button>
+  </header>
+  <main class="content no-fab">
+    <div id="foods-seg" class="segmented" role="tablist" aria-label="表示の切替">
+      <button type="button" class="seg on" data-seg="foods" role="tab" aria-selected="true">マイ食品</button>
+      <button type="button" class="seg" data-seg="sets" role="tab" aria-selected="false">セット</button>
+      <button type="button" class="seg" data-seg="pending" role="tab" aria-selected="false">PFC未登録<span class="badge num" hidden>0</span></button>
+    </div>
+
+    <!-- マイ食品 -->
+    <section id="foods-pane-foods" class="foods-pane" data-pane="foods">
+      <button id="btn-food-new" class="btn btn-primary" aria-label="新しいマイ食品を登録">＋ 新しいマイ食品</button>
+      <section class="card" style="margin-top:12px">
+        <div id="food-list" class="list"></div>
+        <p id="food-empty" hidden>マイ食品はまだありません。上の「＋ 新しいマイ食品」か、記録シートの「この内容をマイ食品に登録」から登録できます。</p>
+      </section>
+      <p class="section-note">マイ食品を削除しても、過去の記録はそのまま残ります。</p>
+    </section>
+
+    <!-- セット(v1.1.0 のセット画面。id は 12.5 のまま) -->
+    <section id="view-sets" class="foods-pane" data-pane="sets" hidden>
+      <button id="btn-set-new" class="btn btn-primary" aria-label="新しいセットを作る">＋ 新しいセット</button>
+      <section class="card" style="margin-top:12px">
+        <div id="set-list" class="list"></div>
+        <p id="set-empty" hidden>セットはまだありません。毎朝の朝食のように決まった組み合わせを、マイ食品から選んでまとめておけます。</p>
+      </section>
+      <p class="section-note">セットの中身はマイ食品を参照します。マイ食品の値を直すと、セットにも反映されます。</p>
+    </section>
+
+    <!-- PFC未登録(買い物リストから来た、P/F/C がまだ無い食品) -->
+    <section id="foods-pane-pending" class="foods-pane" data-pane="pending" hidden>
+      <p class="help" style="margin:0 0 10px">買い物リストで追加した食品のうち、P/F/C をまだ入れていないものです。「PFCを入れる」から入れると、ふつうのマイ食品になります。</p>
+      <section class="card">
+        <div id="pending-list" class="list"></div>
+        <p id="pending-empty" hidden>PFC未登録の食品はありません。</p>
+      </section>
+    </section>
+  </main>
+</section>
+
+<!-- ===================== ホームタブ(13.2): 今日の集計・7日・1週間の平均・推移グラフ・入力エリア ===================== -->
+<section id="view-home" class="view" hidden>
+  <header class="topbar topbar-3">
+    <span class="topbar-spacer"></span>
+    <h1 id="home-date" class="title num">今日</h1>
+    <button id="btn-settings-home" class="icon-btn btn-gear" aria-label="設定">⚙</button>
+  </header>
+  <button id="backup-banner" class="banner" hidden>バックアップしていません。設定から書き出せます ›</button>
+  <main class="content no-fab">
+    <section class="card stats" aria-label="今日の摂取量">
+      <div id="stat-p" class="stat meter" data-n="p" data-status="progress">
+        <div class="row1"><span class="label">たんぱく質</span><span class="remaining num">-</span></div>
+        <div class="row2 num"><span class="consumed">0</span><span class="sep">/</span><span class="target">0</span><span class="unit">g</span></div>
+        <div class="bar" aria-hidden="true"><div class="bar-fill" style="width: 0%"></div><div class="bar-over" style="width: 0%"></div></div>
+      </div>
+      <div id="stat-f" class="stat meter" data-n="f" data-status="progress">
+        <div class="row1"><span class="label">脂質</span><span class="remaining num">-</span></div>
+        <div class="row2 num"><span class="consumed">0</span><span class="sep">/</span><span class="target">0</span><span class="unit">g</span></div>
+        <div class="bar" aria-hidden="true"><div class="bar-fill" style="width: 0%"></div><div class="bar-over" style="width: 0%"></div></div>
+      </div>
+      <div id="stat-c" class="stat meter" data-n="c" data-status="progress">
+        <div class="row1"><span class="label">炭水化物</span><span class="remaining num">-</span></div>
+        <div class="row2 num"><span class="consumed">0</span><span class="sep">/</span><span class="target">0</span><span class="unit">g</span></div>
+        <div class="bar" aria-hidden="true"><div class="bar-fill" style="width: 0%"></div><div class="bar-over" style="width: 0%"></div></div>
+      </div>
+      <div id="stat-kcal" class="stat-kcal">
+        <div class="num"><span class="consumed">0</span> <span class="sep">/</span> <span class="target">0</span> <span class="unit muted">kcal</span></div>
+        <span class="note">P×4＋F×9＋C×4 の計算値</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>直近7日の達成率</h2>
+      <div id="week-strip" role="group" aria-label="直近7日の達成率(タップでその日の記録へ)"></div>
+    </section>
+
+    <section id="week-avg" class="card" aria-labelledby="week-avg-title">
+      <h2 id="week-avg-title">1週間の平均</h2>
+      <div id="week-avg-rows">
+        <div class="avg" data-n="p"><span class="label">たんぱく質</span><span class="vals num">平均 <b class="avg-val">0</b> / 目標 <span class="avg-target">0</span> g</span></div>
+        <div class="avg" data-n="f"><span class="label">脂質</span><span class="vals num">平均 <b class="avg-val">0</b> / 目標 <span class="avg-target">0</span> g</span></div>
+        <div class="avg" data-n="c"><span class="label">炭水化物</span><span class="vals num">平均 <b class="avg-val">0</b> / 目標 <span class="avg-target">0</span> g</span></div>
+        <div class="avg" data-n="kcal"><span class="label">kcal</span><span class="vals num">平均 <b class="avg-val">0</b> / 目標 <span class="avg-target">0</span> kcal</span></div>
+      </div>
+      <p id="week-avg-empty" hidden>まだ記録がありません</p>
+    </section>
+
+    <section id="week-chart" class="card" aria-label="1週間の推移">
+      <div class="card-head">
+        <h2>1週間の推移</h2>
+        <div class="segmented chart-modes" role="group" aria-label="グラフの種類">
+          <button type="button" class="seg chart-mode on" data-mode="kcal" aria-pressed="true">kcal</button>
+          <button type="button" class="seg chart-mode" data-mode="p" aria-pressed="false" aria-label="たんぱく質">P</button>
+          <button type="button" class="seg chart-mode" data-mode="f" aria-pressed="false" aria-label="脂質">F</button>
+          <button type="button" class="seg chart-mode" data-mode="c" aria-pressed="false" aria-label="炭水化物">C</button>
+        </div>
+      </div>
+      <div id="week-chart-svg"></div>
+      <p class="chart-legend"><i aria-hidden="true"></i><span>その日の目標</span></p>
+    </section>
+
+    <!-- 入力エリア: ここから追加した記録は常に今日に入る -->
+    <section id="home-quick" class="home-quick">
+      <h2 class="section-title">記録する</h2>
+      <h2>セット</h2>
+      <div id="home-set-chips" class="chips"><button type="button" class="chip manage" data-manage="sets" aria-label="セットを管理"><span class="name">＋ セットを管理</span></button></div>
+      <h2>マイ食品</h2>
+      <div id="home-food-chips" class="chips"><button type="button" class="chip manage" data-manage="foods" aria-label="マイ食品を管理"><span class="name">＋ マイ食品を管理</span></button></div>
+      <h2>最近の記録</h2>
+      <div id="home-recent-chips" class="chips"></div>
+      <button id="btn-home-add" class="btn btn-primary" aria-label="今日の記録を追加">＋ 記録する</button>
+    </section>
+  </main>
+</section>
+
+<!-- ===================== 買い物タブ(13.6): 追加欄・よく買うもの・リスト・片付け ===================== -->
+<section id="view-shopping" class="view" hidden>
+  <header class="topbar topbar-3">
+    <span class="topbar-spacer"></span>
+    <h1 class="title">買い物</h1>
+    <button id="btn-settings-shopping" class="icon-btn btn-gear" aria-label="設定">⚙</button>
+  </header>
+  <main class="content no-fab">
+    <!-- 追加欄: 文字を打つとマイ食品(PFC未登録を含む)と食品ではない品の候補が出る -->
+    <section class="card shop-add">
+      <div class="input-row">
+        <input id="shop-input" type="text" maxlength="100" autocomplete="off" enterkeyhint="done" placeholder="買うものを追加(例 卵)" aria-label="買うものを追加">
+        <button id="btn-shop-add" class="btn btn-primary btn-inline" aria-label="リストに追加" disabled>追加</button>
+      </div>
+      <div id="shop-suggest" class="list suggest-list" role="listbox" aria-label="候補" hidden></div>
+      <!-- 候補に無い名前: 食品(PFCはあとで)か、食品ではないか -->
+      <div id="shop-new" class="shop-new" hidden>
+        <p class="field-label">「<span id="shop-new-name"></span>」は新しい品です。種類を選んで「追加」</p>
+        <div id="shop-new-kind" class="segmented" role="radiogroup" aria-label="新しい品の種類" data-kind="food">
+          <button type="button" class="seg on" data-kind="food" role="radio" aria-checked="true">食品(PFCはあとで)</button>
+          <button type="button" class="seg" data-kind="goods" role="radio" aria-checked="false">食品ではない</button>
+        </div>
+      </div>
+    </section>
+
+    <h2>よく買うもの</h2>
+    <div id="shop-frequent" class="chips"></div>
+
+    <button id="shop-group-toggle" type="button" class="switch-row" role="switch" aria-checked="false"><span>安い店ごとに分ける</span><span class="switch" aria-hidden="true"></span></button>
+    <section class="card shop-card">
+      <div id="shop-list" class="list"></div>
+      <p id="shop-empty" class="empty-note" hidden>リストは空です。上の欄から買うものを追加できます。</p>
+    </section>
+    <button id="btn-shop-clear" class="btn btn-secondary btn-on-bg" aria-label="買ったものを片付ける">買ったものを片付ける</button>
+    <p class="section-note">チェックを付けると、店と値段を入れられます(値段タブで比べられます)。</p>
+  </main>
+</section>
+
+<!-- ===================== 値段タブ(13.7): 品ごとの店別の値段 ===================== -->
+<section id="view-prices" class="view" hidden>
+  <header class="topbar topbar-3">
+    <span class="topbar-spacer"></span>
+    <h1 class="title">値段</h1>
+    <button id="btn-settings-prices" class="icon-btn btn-gear" aria-label="設定">⚙</button>
+  </header>
+  <main class="content no-fab">
+    <input id="price-search" type="text" maxlength="100" autocomplete="off" enterkeyhint="search" placeholder="品名で検索" aria-label="品名で検索">
+    <div class="price-tools">
+      <div id="price-mode" class="segmented" role="group" aria-label="表示する店" data-mode="best">
+        <button type="button" class="seg on" data-mode="best" aria-pressed="true">最安だけ</button>
+        <button type="button" class="seg" data-mode="all" aria-pressed="false">すべての店</button>
+      </div>
+      <button id="btn-stores" class="btn btn-secondary btn-inline btn-on-bg" aria-label="店を管理">店を管理</button>
+    </div>
+    <div id="price-list"></div>
+    <p id="price-empty" class="empty-note card" hidden></p>
+    <button id="btn-price-add" class="btn btn-primary" aria-label="値段を追加">＋ 値段を追加</button>
+  </main>
+</section>
+
 <!-- ===================== 設定画面 ===================== -->
 <section id="view-settings" class="view" hidden>
   <header class="topbar topbar-3">
-    <button id="btn-settings-back" class="text-btn" aria-label="メインに戻る">‹ 戻る</button>
+    <button id="btn-settings-back" class="text-btn" aria-label="前の画面に戻る">‹ 戻る</button>
     <h1 class="title">設定</h1>
     <span style="min-width:44px"></span>
   </header>
@@ -549,41 +966,8 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
     <section class="card">
       <h2>危険な操作</h2>
       <button id="btn-wipe" class="btn btn-danger" aria-label="全データを削除">全データを削除</button>
-      <p class="help">記録・マイ食品・セット・目標をすべて消します。先にバックアップを取ってください。</p>
+      <p class="help">記録・マイ食品・セット・目標・買い物リスト・店と値段をすべて消します。先にバックアップを取ってください。</p>
     </section>
-  </main>
-</section>
-
-<!-- ===================== マイ食品(管理画面) ===================== -->
-<section id="view-foods" class="view" hidden>
-  <header class="topbar topbar-3">
-    <button id="btn-foods-back" class="text-btn" aria-label="メインに戻る">‹ 戻る</button>
-    <h1 class="title">マイ食品</h1>
-    <button id="btn-food-new" class="text-btn" aria-label="マイ食品を追加">＋ 追加</button>
-  </header>
-  <main class="content no-fab">
-    <section class="card">
-      <div id="food-list" class="list"></div>
-      <p id="food-empty" hidden>マイ食品はまだありません。右上の「＋ 追加」か、記録シートの「この内容をマイ食品に登録」から登録できます。</p>
-    </section>
-    <p class="section-note">マイ食品を削除しても、過去の記録はそのまま残ります。</p>
-  </main>
-</section>
-
-<!-- ===================== セット(管理画面) ===================== -->
-<section id="view-sets" class="view" hidden>
-  <header class="topbar topbar-3">
-    <button id="btn-sets-back" class="text-btn" aria-label="メインに戻る">‹ 戻る</button>
-    <h1 class="title">セット</h1>
-    <span style="min-width:44px"></span>
-  </header>
-  <main class="content no-fab">
-    <button id="btn-set-new" class="btn btn-primary" aria-label="新しいセットを作る">＋ 新しいセット</button>
-    <section class="card" style="margin-top:12px">
-      <div id="set-list" class="list"></div>
-      <p id="set-empty" hidden>セットはまだありません。毎朝の朝食のように決まった組み合わせを、マイ食品から選んでまとめておけます。</p>
-    </section>
-    <p class="section-note">セットの中身はマイ食品を参照します。マイ食品の値を直すと、セットにも反映されます。</p>
   </main>
 </section>
 
@@ -611,7 +995,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
   </div>
 </div>
 
-<!-- ===================== マイ食品の追加・編集シート ===================== -->
+<!-- ===================== マイ食品の追加・編集シート(PFC未登録の食品に P/F/C を入れるときもこのシート) ===================== -->
 <div id="sheet-food" class="sheet" hidden>
   <div class="sheet-backdrop" data-close="food"></div>
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-food-title">
@@ -629,6 +1013,11 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
       <label class="field lc"><span>炭水化物 (g)</span><input id="food-c" type="number" inputmode="decimal" step="0.1" min="0" placeholder="0"></label>
     </div>
     <p class="kcal-live"><b id="food-kcal" class="num">0</b> kcal</p>
+    <div class="field-label">値段の単位(買い物・値段の比較で使います)</div>
+    <div class="radio-group" role="radiogroup" aria-label="値段の単位">
+      <label><input id="food-price-basis-item" type="radio" name="food-price-basis" value="perItem" checked><span>1個あたり</span></label>
+      <label><input id="food-price-basis-100g" type="radio" name="food-price-basis" value="per100g"><span>100gあたり</span></label>
+    </div>
     <div class="btn-row">
       <button id="btn-food-cancel" class="btn btn-secondary" aria-label="キャンセル">キャンセル</button>
       <button id="btn-food-save" class="btn btn-primary" aria-label="保存">保存</button>
@@ -726,6 +1115,129 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
   </div>
 </div>
 
+<!-- ===================== 買ったシート(買い物リストでチェックしたとき): 店と値段 ===================== -->
+<div id="sheet-bought" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="bought"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="bought-title">
+    <div class="grabber"></div>
+    <h3 id="bought-title">買った</h3>
+    <p id="bought-unit" class="help" style="margin:-8px 0 12px"></p>
+    <p id="bought-pending-note" class="note-pending" hidden>PFC未登録です。あとでマイ食品タブの『PFC未登録』から入れられます</p>
+    <div class="field">
+      <span id="bought-store-label">店</span>
+      <div class="input-row"><select id="bought-store" aria-labelledby="bought-store-label"></select><button id="btn-bought-new-store" type="button" class="btn btn-secondary btn-inline" aria-label="新しい店を作る">＋ 新しい店</button></div>
+    </div>
+    <div id="bought-new-store" class="input-row new-store" hidden><input id="bought-new-store-name" type="text" maxlength="40" autocomplete="off" placeholder="店の名前(例 業務スーパー)" aria-label="新しい店の名前"><button id="btn-bought-store-create" type="button" class="btn btn-primary btn-inline" aria-label="この名前で店を作る">作る</button></div>
+    <div class="price-inputs">
+      <label class="field"><span id="bought-price-label">金額(円)</span><input id="bought-price" type="number" inputmode="numeric" min="0" step="1" placeholder="例 350"></label>
+      <label id="bought-grams-field" class="field"><span>グラム(g)</span><input id="bought-grams" type="number" inputmode="decimal" min="0" step="0.1" placeholder="例 200"></label>
+    </div>
+    <p id="bought-per100" class="price-live num"></p>
+    <div class="btn-row">
+      <button id="btn-bought-skip" class="btn btn-secondary" aria-label="値段は入れずにチェックだけ付ける">値段は入れない</button>
+      <button id="btn-bought-save" class="btn btn-primary" aria-label="値段を保存">保存</button>
+    </div>
+    <div class="btn-row"><button id="btn-bought-cancel" class="btn btn-secondary" aria-label="キャンセル(チェックしない)">キャンセル</button></div>
+  </div>
+</div>
+
+<!-- ===================== 買い物リストの品のシート(数量メモ・値段の単位・リストから外す) ===================== -->
+<div id="sheet-shop-item" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="shop-item"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="shop-item-title">
+    <div class="grabber"></div>
+    <h3 id="shop-item-title">品</h3>
+    <p id="shop-item-kind" class="help" style="margin:-8px 0 12px"></p>
+    <label id="shop-item-name-field" class="field"><span>名前</span><input id="shop-item-name" type="text" maxlength="100" autocomplete="off"></label>
+    <label class="field"><span>数量メモ(任意)</span><input id="shop-item-qty" type="text" maxlength="40" autocomplete="off" placeholder="例 2パック"></label>
+    <div class="field-label">値段の単位</div>
+    <div class="radio-group" role="radiogroup" aria-label="値段の単位">
+      <label><input id="shop-item-basis-item" type="radio" name="shop-item-basis" value="perItem" checked><span>1個あたり</span></label>
+      <label><input id="shop-item-basis-100g" type="radio" name="shop-item-basis" value="per100g"><span>100gあたり</span></label>
+    </div>
+    <div class="btn-row">
+      <button id="btn-shop-item-cancel" class="btn btn-secondary" aria-label="キャンセル">キャンセル</button>
+      <button id="btn-shop-item-save" class="btn btn-primary" aria-label="保存">保存</button>
+    </div>
+    <div class="btn-row"><button id="btn-shop-item-remove" class="btn btn-secondary" aria-label="リストから外す">リストから外す</button></div>
+    <div class="btn-row"><button id="btn-shop-item-delete" class="btn btn-danger" aria-label="この品を削除" hidden>この品を削除</button></div>
+  </div>
+</div>
+
+<!-- ===================== 値段の追加・編集シート ===================== -->
+<div id="sheet-price" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="price"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-price-title">
+    <div class="grabber"></div>
+    <h3 id="sheet-price-title">値段を追加</h3>
+    <label class="field"><span>品</span><select id="price-item" aria-label="品"></select></label>
+    <div id="price-new" hidden>
+      <label class="field"><span>新しい品の名前</span><input id="price-new-name" type="text" maxlength="100" autocomplete="off" placeholder="例 鶏むね肉"></label>
+      <div id="price-new-kind" class="segmented" role="radiogroup" aria-label="新しい品の種類" data-kind="food">
+        <button type="button" class="seg on" data-kind="food" role="radio" aria-checked="true">食品(PFCはあとで)</button>
+        <button type="button" class="seg" data-kind="goods" role="radio" aria-checked="false">食品ではない</button>
+      </div>
+      <div class="field-label">値段の単位</div>
+      <div class="radio-group" role="radiogroup" aria-label="値段の単位">
+        <label><input id="price-new-basis-item" type="radio" name="price-new-basis" value="perItem" checked><span>1個あたり</span></label>
+        <label><input id="price-new-basis-100g" type="radio" name="price-new-basis" value="per100g"><span>100gあたり</span></label>
+      </div>
+    </div>
+    <p id="price-item-unit" class="help" style="margin:-6px 0 12px"></p>
+    <div class="field">
+      <span id="price-store-label">店</span>
+      <div class="input-row"><select id="price-store" aria-labelledby="price-store-label"></select><button id="btn-price-new-store" type="button" class="btn btn-secondary btn-inline" aria-label="新しい店を作る">＋ 新しい店</button></div>
+    </div>
+    <div id="price-new-store" class="input-row new-store" hidden><input id="price-new-store-name" type="text" maxlength="40" autocomplete="off" placeholder="店の名前(例 業務スーパー)" aria-label="新しい店の名前"><button id="btn-price-store-create" type="button" class="btn btn-primary btn-inline" aria-label="この名前で店を作る">作る</button></div>
+    <div class="price-inputs">
+      <label class="field"><span id="price-amount-label">金額(円)</span><input id="price-amount" type="number" inputmode="numeric" min="0" step="1" placeholder="例 350"></label>
+      <label id="price-grams-field" class="field"><span>グラム(g)</span><input id="price-grams" type="number" inputmode="decimal" min="0" step="0.1" placeholder="例 200"></label>
+    </div>
+    <p id="price-per100" class="price-live num"></p>
+    <p id="price-overwrite-note" class="help" hidden>この品のこの店の値段を上書きします。</p>
+    <div class="btn-row">
+      <button id="btn-price-cancel" class="btn btn-secondary" aria-label="キャンセル">キャンセル</button>
+      <button id="btn-price-save" class="btn btn-primary" aria-label="保存">保存</button>
+    </div>
+    <div class="btn-row"><button id="btn-price-delete" class="btn btn-danger" aria-label="この値段を削除" hidden>この値段を削除</button></div>
+  </div>
+</div>
+
+<!-- ===================== 店の管理シート(追加・名前の変更・削除) ===================== -->
+<div id="sheet-stores" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="stores"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-stores-title">
+    <div class="grabber"></div>
+    <h3 id="sheet-stores-title">店を管理</h3>
+    <p class="help" style="margin:-8px 0 10px">名前は欄を直すとそのまま変わります。店を削除すると、その店の値段も消えます。</p>
+    <div id="store-list" class="list"></div>
+    <p id="store-empty" class="empty-note" hidden>店はまだありません。下の欄から追加できます。</p>
+    <div class="input-row" style="margin-top:10px"><input id="store-new-name" type="text" maxlength="40" autocomplete="off" placeholder="新しい店の名前" aria-label="新しい店の名前"><button id="btn-store-add" type="button" class="btn btn-primary btn-inline" aria-label="店を追加" disabled>追加</button></div>
+    <div class="btn-row"><button id="btn-stores-close" class="btn btn-secondary" aria-label="閉じる">閉じる</button></div>
+  </div>
+</div>
+
+<!-- ===================== タブバー(13.1)。左から 記録 / マイ食品 / ホーム / 買い物 / 値段 ===================== -->
+<nav id="tabbar" aria-label="画面の切替">
+  <button type="button" class="tab" data-tab="record" aria-label="記録">
+    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 10h7M8.5 14h7M8.5 18h4"/></svg></span><span class="tab-label">記録</span>
+  </button>
+  <button type="button" class="tab" data-tab="foods" aria-label="マイ食品">
+    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11h18a9 8 0 0 1-18 0Z"/><path d="M9 8c0-1.6 1.6-1.9 1.6-4M13.4 8c0-1.6 1.6-1.9 1.6-4"/></svg></span><span class="tab-label">マイ食品</span>
+    <span class="badge num" hidden>0</span>
+  </button>
+  <button type="button" class="tab tab-home" data-tab="home" aria-label="ホーム">
+    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5.5h4V20"/></svg></span><span class="tab-label">ホーム</span>
+  </button>
+  <button type="button" class="tab" data-tab="shopping" aria-label="買い物">
+    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 4h2.6l2.3 11h10.8l2.1-8H6.2"/><circle cx="9.5" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></svg></span><span class="tab-label">買い物</span>
+    <span class="badge num" hidden>0</span>
+  </button>
+  <button type="button" class="tab" data-tab="prices" aria-label="値段">
+    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8 8a1.4 1.4 0 0 1 0 2l-7 7a1.4 1.4 0 0 1-2 0Z"/><circle cx="8" cy="8" r="1.6"/></svg></span><span class="tab-label">値段</span>
+  </button>
+</nav>
+
 <!-- トースト(元に戻す付き) -->
 <div id="toast" class="toast" role="status" hidden><span id="toast-text"></span><button id="toast-undo" aria-label="元に戻す" hidden>元に戻す</button></div>
 <!-- 新バージョン通知 -->
@@ -739,7 +1251,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
 (function () {
 'use strict';
 
-const APP_VERSION = '1.1.0';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
+const APP_VERSION = '1.2.0';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
 const DATA_VERSION = 1;        // 保存データの形式バージョン
 const NUTRIENTS = ['p', 'f', 'c'];
 const NUTRIENT_LABEL = { p: 'たんぱく質', f: '脂質', c: '炭水化物' };
@@ -1047,22 +1559,354 @@ function recentItems(days, today, limit) {
 }
 // 直近 7 日(6日前〜今日)の達成率
 function weekSummary(data, today) {
-  const out = [];
-  const settingsTargets = data && data.settings ? normTargets(data.settings.targets) : null;
   const dir = normDirection(data && data.settings && data.settings.direction);
-  for (let i = 6; i >= 0; i--) {
-    const key = addDays(today, -i);
-    const day = data && data.days ? data.days[key] : null;
-    const entries = day && Array.isArray(day.entries) ? day.entries : [];
-    const targets = (day && normTargets(day.targets)) || settingsTargets || { p: 0, f: 0, c: 0 };
-    const stats = dayStats(entries, targets, dir);
-    out.push({
-      key, weekday: weekdayOf(key), isToday: key === today, hasEntries: entries.length > 0,
+  return weekKeys(today).map((key) => {
+    const d = dayData(data, key);
+    const stats = dayStats(d.entries, d.targets, dir);
+    return {
+      key, weekday: weekdayOf(key), isToday: key === today, hasEntries: d.hasEntries,
       bars: NUTRIENTS.map((k) => ({ n: k, pct: Math.max(0, Math.min(100, stats[k].pct)), status: stats[k].status }))
-    });
-  }
+    };
+  });
+}
+
+// ---------- ホーム: 1週間の平均・推移グラフ(13.2) ----------
+const CHART_MODES = ['kcal', 'p', 'f', 'c'];
+// 直近 7 日(6日前〜今日)の日付キー(古い順)
+function weekKeys(today) {
+  const out = [];
+  for (let i = 6; i >= 0; i--) out.push(addDays(today, -i));
   return out;
 }
+// その日の記録と目標。日レコードが無い・目標が壊れている日は settings の目標を使う(仕様 4 章)
+function dayData(data, key) {
+  const day = data && data.days ? data.days[key] : null;
+  const entries = day && Array.isArray(day.entries) ? day.entries : [];
+  const settingsTargets = data && data.settings ? normTargets(data.settings.targets) : null;
+  const targets = (day && normTargets(day.targets)) || settingsTargets || { p: 0, f: 0, c: 0 };
+  return { entries, targets, hasEntries: entries.length > 0 };
+}
+// kcal の判定の向き。kcal 専用の向きは持たないので、P/F/C の向きの多数決で決める(初期値 P 以上・F/C 以下 → 以下でOK)
+function kcalDirection(direction) {
+  const d = normDirection(direction);
+  return NUTRIENTS.filter((k) => d[k] === 'atMost').length >= 2 ? 'atMost' : 'atLeast';
+}
+// 平均の見出し: 「記録のある5日間の平均」/ 記録が無ければ「まだ記録がありません」
+function weekAvgLabel(n) { return n > 0 ? '記録のある' + n + '日間の平均' : 'まだ記録がありません'; }
+// 1週間の平均。直近 7 日のうち記録がある日だけで割る。比べる目標は、それぞれの日のスナップショットの平均。
+// 戻り値 { n, label, p: { avg, target, status }, f, c, kcal }(avg / target は小数1桁。kcal は整数)
+function weekAverage(data, today) {
+  const dir = normDirection(data && data.settings && data.settings.direction);
+  const sum = { p: 0, f: 0, c: 0 }, tsum = { p: 0, f: 0, c: 0 };
+  let n = 0;
+  weekKeys(today).forEach((key) => {
+    const d = dayData(data, key);
+    if (!d.hasEntries) return;
+    const s = sumEntries(d.entries);
+    n++;
+    NUTRIENTS.forEach((k) => { sum[k] += s[k]; tsum[k] += d.targets[k]; });
+  });
+  const div = n || 1;
+  const out = { n, label: weekAvgLabel(n) };
+  NUTRIENTS.forEach((k) => {
+    const avg = round1(sum[k] / div), target = round1(tsum[k] / div);
+    out[k] = { avg, target, status: n ? judge(avg, target, dir[k]) : 'progress' };
+  });
+  // kcal は P/F/C から計算する式が線形なので、平均の P/F/C から出した値 = 日ごとの kcal の平均
+  const avgK = calcKcal(sum.p / div, sum.f / div, sum.c / div), tgtK = calcKcal(tsum.p / div, tsum.f / div, tsum.c / div);
+  out.kcal = { avg: avgK, target: tgtK, status: n ? judge(avgK, tgtK, kcalDirection(dir)) : 'progress' };
+  return out;
+}
+// 推移グラフの値。mode は 'kcal' | 'p' | 'f' | 'c'(それ以外は kcal)。値と目標は表示と同じ整数。
+// 記録の無い日は value 0・status 'none'(棒を出さない)。max はグラフの縦の最大値(値と目標の大きい方、最低 1)
+function weekChartData(data, today, mode) {
+  const m = CHART_MODES.indexOf(mode) >= 0 ? mode : 'kcal';
+  const dir = normDirection(data && data.settings && data.settings.direction);
+  const days = weekKeys(today).map((key) => {
+    const d = dayData(data, key);
+    const s = sumEntries(d.entries);
+    const value = m === 'kcal' ? s.kcal : roundG(s[m]);
+    const target = m === 'kcal' ? calcKcal(d.targets.p, d.targets.f, d.targets.c) : roundG(d.targets[m]);
+    const status = d.hasEntries ? judge(value, target, m === 'kcal' ? kcalDirection(dir) : dir[m]) : 'none';
+    return { key, weekday: weekdayOf(key), isToday: key === today, hasEntries: d.hasEntries, value: d.hasEntries ? value : 0, target, status };
+  });
+  const max = Math.max(1, ...days.map((d) => Math.max(d.value, d.target)));
+  return { mode: m, unit: m === 'kcal' ? 'kcal' : 'g', days, max };
+}
+// グラフの座標(SVG の viewBox 内)。width/height は全体、top/bottom は値ラベル・曜日ラベルのための余白。
+// 各日: x(列の左端)、w(列の幅)、cx(中央)、barX/barW/barY/barH(棒。記録が無ければ barH 0)、targetY(目標の破線の高さ)
+function chartGeometry(chart, opt) {
+  const o = Object.assign({ width: 320, height: 168, top: 20, bottom: 24, barRatio: 0.52 }, opt || {});
+  const plotH = o.height - o.top - o.bottom;
+  const baseY = o.top + plotH;
+  const w = o.width / chart.days.length;
+  const top = chart.max * 1.08; // 一番高い棒・目標の上に値ラベルの隙間を取る
+  const yOf = (v) => baseY - Math.max(0, Math.min(1, v / top)) * plotH;
+  const slots = chart.days.map((d, i) => {
+    const x = i * w, barW = Math.round(w * o.barRatio * 10) / 10;
+    const barY = d.hasEntries ? yOf(d.value) : baseY;
+    return { key: d.key, x, w, cx: x + w / 2, barX: x + (w - barW) / 2, barW, barY, barH: baseY - barY, targetY: yOf(d.target) };
+  });
+  return { width: o.width, height: o.height, baseY, slots };
+}
+// 起動時・前面に戻ったときの更新確認を、前回から ms 以上たっていれば行う(時計が戻った場合も行う)
+function updateCheckDue(lastAt, now, ms) { return !lastAt || now - lastAt >= ms || now < lastAt; }
+
+// ---------- マイ食品: PFC未登録・値段の単位(13.4 / 13.5) ----------
+// 買い物から来て P/F/C がまだ無い食品
+function isPending(food) { return !!(food && food.pending === true); }
+// マイ食品チップ・選択シート・マイ食品一覧に出す食品(PFC未登録を除く)
+function activeFoods(foods) { return (Array.isArray(foods) ? foods : []).filter((f) => f && typeof f === 'object' && !isPending(f)); }
+// PFC未登録の食品(名前順)
+function pendingFoods(foods) {
+  return (Array.isArray(foods) ? foods : []).filter(isPending).sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ja'));
+}
+function countPending(foods) { return (Array.isArray(foods) ? foods : []).filter(isPending).length; }
+// 値段の単位の既定値: 100g 基準の食品は 100gあたり、1食分基準は 1個あたり
+function defaultPriceBasis(basis) { return basis === 'per100g' ? 'per100g' : 'perItem'; }
+// 食品の値段の単位(無い・不正なら basis から決める)
+function priceBasisOf(food) {
+  const v = food && food.priceBasis;
+  return v === 'per100g' || v === 'perItem' ? v : defaultPriceBasis(food && food.basis);
+}
+
+// ---------- 買い物・値段(13.5〜13.7) ----------
+// 品 = マイ食品(itemType 'food'。PFC未登録を含む)か、食品ではない品(itemType 'goods')。
+// 値段は「1品 × 1店 = 1件」で最新の値段だけを持つ。100gあたりで比べる品は grams 付き、1個あたりの品は grams なし
+const ITEM_TYPES = ['food', 'goods'];
+const MAX_STORE_NAME = 40;
+const MAX_QTY = 40;            // 数量メモの長さの上限
+const MAX_PRICE = 9999999;     // 金額の上限(円)。異常値の混入防止
+const FREQUENT_LIMIT = 10;     // 「よく買うもの」の数
+const SUGGEST_LIMIT = 8;       // 買うものの入力候補の数
+const NO_PRICE_GROUP = '値段未登録';
+function normPriceBasis(v) { return v === 'per100g' ? 'per100g' : 'perItem'; }
+// 名前の比べ方(全角英数 → 半角、大文字 → 小文字、前後の空白なし)。部分一致の検索と同じ名前の判定に使う
+function nameKey(s) {
+  let t = String(s ?? '');
+  try { t = t.normalize('NFKC'); } catch (e) { /* 古い環境ではそのまま */ }
+  return t.trim().toLowerCase();
+}
+function cmpName(a, b) { return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), 'ja'); }
+function isoTime(s) { return isValidIso(s) ? new Date(s).getTime() : 0; }
+// 金額の入力: 0 以上の整数(円)。小数は四捨五入。空・不正・上限超えは null
+function parsePrice(v) {
+  if (!isNumeric(v)) return null;
+  const n = typeof v === 'string' ? parseNum(v) : v;
+  if (n === null || n < 0) return null;
+  const r = Math.round(n);
+  return r > MAX_PRICE ? null : r;
+}
+// グラムの入力: 0 より大きい数(小数1桁)。空・0・不正は null
+function parseGrams(v) {
+  if (!isNumeric(v)) return null;
+  const n = round1(typeof v === 'string' ? parseNum(v) : v);
+  return n > 0 ? Math.min(n, MAX_G) : null;
+}
+// 比べるための値(丸めない)。grams があれば 100gあたり、なければ 1個あたり
+function unitValue(pr) {
+  if (!pr) return Infinity;
+  const g = toNum(pr.grams);
+  return g > 0 ? toNum(pr.price) / g * 100 : toNum(pr.price);
+}
+// 表示用の単価: per100g → 100gあたりの円(price / grams × 100 を整数に丸める)、perItem → 金額そのまま。
+// basis を省くと grams の有無で決める。100gあたりで grams が無いときは null
+function unitPrice(price, grams, basis) {
+  const b = basis || (toNum(grams) > 0 ? 'per100g' : 'perItem');
+  if (b === 'per100g') { const g = toNum(grams); return g > 0 ? Math.round(toNum(price) / g * 100) : null; }
+  return Math.round(toNum(price));
+}
+function yen(n) { return '¥' + fmtInt(n); }
+function priceUnitSuffix(basis) { return basis === 'per100g' ? '/100g' : '/個'; }
+// 値段の単位の見出し: 「100gあたり」「1個あたり」
+function priceBasisLabel(basis) { return basis === 'per100g' ? '100gあたり' : '1個あたり'; }
+// 「¥175/100g」「¥98/個」
+function priceLabel(pr, basis) {
+  if (!pr) return '';
+  const b = basis || (toNum(pr.grams) > 0 ? 'per100g' : 'perItem');
+  const u = unitPrice(pr.price, pr.grams, b);
+  return u === null ? '' : yen(u) + priceUnitSuffix(b);
+}
+// 買ったシート・値段シートのライブ表示。「¥350 / 200g → 100gあたり ¥175」「1個あたり ¥98」。入力が足りなければ ''
+function priceInputText(price, grams, basis) {
+  if (price === null || price === undefined) return '';
+  if (basis === 'per100g') {
+    if (!(grams > 0)) return '';
+    return yen(price) + ' / ' + fmtG(grams) + 'g → 100gあたり ' + yen(unitPrice(price, grams, 'per100g'));
+  }
+  return '1個あたり ' + yen(price);
+}
+// 更新日の表示: 「10/1」(今年でなければ「2025/10/1」)
+function shortDate(iso, today) {
+  if (!isValidIso(iso)) return '';
+  const d = new Date(iso);
+  const t = parseDateKey(today);
+  const md = (d.getMonth() + 1) + '/' + d.getDate();
+  return t && t.getFullYear() !== d.getFullYear() ? d.getFullYear() + '/' + md : md;
+}
+// その品の値段(すべての店)
+function pricesFor(prices, itemType, itemId) {
+  return (Array.isArray(prices) ? prices : []).filter((p) => p && p.itemType === itemType && p.itemId === itemId);
+}
+// 安い順。同じ値なら新しく更新した順
+function sortPrices(prices) {
+  return (Array.isArray(prices) ? prices : []).filter((p) => p && typeof p === 'object').slice().sort((a, b) =>
+    (unitValue(a) - unitValue(b)) || (isoTime(b.updatedAt) - isoTime(a.updatedAt)) || String(a.id).localeCompare(String(b.id)));
+}
+// その品の最安の値段(無ければ null)
+function bestPrice(prices, itemType, itemId) { return sortPrices(pricesFor(prices, itemType, itemId))[0] || null; }
+function findPrice(prices, itemType, itemId, storeId) {
+  return (Array.isArray(prices) ? prices : []).find((p) => p && p.itemType === itemType && p.itemId === itemId && p.storeId === storeId) || null;
+}
+// 品 × 店の値段を上書き(無ければ追加)して、新しい配列と保存した 1 件を返す。basis が perItem なら grams は持たない
+function upsertPrice(prices, rec, nowIso) {
+  const list = Array.isArray(prices) ? prices : [];
+  const old = findPrice(list, rec.itemType, rec.itemId, rec.storeId);
+  const pr = { id: old ? old.id : genId('pr'), itemType: rec.itemType, itemId: rec.itemId, storeId: rec.storeId, price: rec.price };
+  if (rec.basis === 'per100g') pr.grams = rec.grams;
+  pr.updatedAt = nowIso || localIso(new Date());
+  return { prices: old ? list.map((p) => (p === old ? pr : p)) : list.concat(pr), price: pr };
+}
+function findStore(stores, id) { return (Array.isArray(stores) ? stores : []).find((s) => s && s.id === id) || null; }
+function sortStores(stores) { return (Array.isArray(stores) ? stores : []).filter((s) => s && typeof s === 'object').slice().sort(cmpName); }
+// 同じ名前(大文字小文字・全角半角を区別しない)の店
+function findStoreByName(stores, name) { const k = nameKey(name); return (Array.isArray(stores) ? stores : []).find((s) => s && nameKey(s.name) === k) || null; }
+// 「前回選んだ店」: いちばん最近に値段を入れた店。無ければ名前順の最初の店。店が無ければ ''
+function lastUsedStoreId(prices, stores) {
+  let best = null;
+  (Array.isArray(prices) ? prices : []).forEach((p) => {
+    if (!p || !findStore(stores, p.storeId)) return;
+    if (!best || isoTime(p.updatedAt) > isoTime(best.updatedAt)) best = p;
+  });
+  if (best) return best.storeId;
+  const first = sortStores(stores)[0];
+  return first ? first.id : '';
+}
+// 品の情報 { type, id, name, priceBasis, pending, kind }(見つからなければ null)。kind は画面に出す種類名
+function itemOf(foods, goods, type, id) {
+  if (type === 'food') {
+    const f = findFood(foods, id);
+    return f ? { type, id, name: f.name, priceBasis: priceBasisOf(f), pending: isPending(f), kind: isPending(f) ? 'PFC未登録' : 'マイ食品' } : null;
+  }
+  if (type === 'goods') {
+    const g = (Array.isArray(goods) ? goods : []).find((x) => x && x.id === id);
+    return g ? { type, id, name: g.name, priceBasis: normPriceBasis(g.priceBasis), pending: false, kind: '食品ではない' } : null;
+  }
+  return null;
+}
+// すべての品(マイ食品 → 食品ではない品)。名前順
+function allItems(foods, goods) {
+  const out = [];
+  (Array.isArray(foods) ? foods : []).forEach((f) => { if (f && f.id) out.push(itemOf(foods, goods, 'food', f.id)); });
+  (Array.isArray(goods) ? goods : []).forEach((g) => { if (g && g.id) out.push(itemOf(foods, goods, 'goods', g.id)); });
+  return out.filter(Boolean).sort(cmpName);
+}
+function sameItem(a, type, id) { return !!a && a.itemType === type && a.itemId === id; }
+// 買うものの入力候補: 名前の部分一致(前方一致を先に)。リストに未チェックで入っていれば inList
+function shopSuggestions(foods, goods, shopping, query, limit) {
+  const q = nameKey(query);
+  if (!q) return [];
+  const list = Array.isArray(shopping) ? shopping : [];
+  return allItems(foods, goods).filter((it) => nameKey(it.name).includes(q))
+    .sort((a, b) => (nameKey(a.name).startsWith(q) ? 0 : 1) - (nameKey(b.name).startsWith(q) ? 0 : 1) || cmpName(a, b))
+    .slice(0, limit || SUGGEST_LIMIT)
+    .map((it) => Object.assign(it, { inList: list.some((r) => sameItem(r, it.type, it.id) && !r.checked) }));
+}
+// 入力した名前とまったく同じ名前の品(マイ食品を優先)。無ければ null
+function exactItem(foods, goods, name) {
+  const k = nameKey(name);
+  if (!k) return null;
+  const items = allItems(foods, goods).filter((it) => nameKey(it.name) === k);
+  return items.find((it) => it.type === 'food') || items[0] || null;
+}
+// よく買うもの: 買い物リストに入れた回数(shopCount)の多い順に最大 10 件。いま未チェックで入っている品は出さない
+function frequentShopping(foods, goods, shopping, limit) {
+  const list = Array.isArray(shopping) ? shopping : [];
+  const counted = [];
+  (Array.isArray(foods) ? foods : []).forEach((f) => { if (f && f.shopCount > 0) counted.push({ type: 'food', id: f.id, name: f.name, count: f.shopCount }); });
+  (Array.isArray(goods) ? goods : []).forEach((g) => { if (g && g.shopCount > 0) counted.push({ type: 'goods', id: g.id, name: g.name, count: g.shopCount }); });
+  return counted.filter((it) => !list.some((r) => sameItem(r, it.type, it.id) && !r.checked))
+    .sort((a, b) => b.count - a.count || cmpName(a, b)).slice(0, limit || FREQUENT_LIMIT);
+}
+// 買い物リストの並び: 未チェック(入れた順) → チェック済み(買った順。薄く表示して下に移る)
+function sortShopping(shopping) {
+  const list = (Array.isArray(shopping) ? shopping : []).filter((r) => r && typeof r === 'object');
+  const open = list.filter((r) => !r.checked).sort((a, b) => isoTime(a.addedAt) - isoTime(b.addedAt));
+  const done = list.filter((r) => r.checked).sort((a, b) => isoTime(a.checkedAt) - isoTime(b.checkedAt));
+  return open.concat(done);
+}
+function countUnchecked(shopping) { return (Array.isArray(shopping) ? shopping : []).filter((r) => r && !r.checked).length; }
+// 最安の店ごとに分ける。[{ storeId, name, rows }](店の名前順。値段の無い品は最後の「値段未登録」(storeId null)にまとめる)
+function groupByBestStore(rows, prices, stores) {
+  const groups = new Map();
+  const none = { storeId: null, name: NO_PRICE_GROUP, rows: [] };
+  (Array.isArray(rows) ? rows : []).forEach((r) => {
+    const best = bestPrice(prices, r.itemType, r.itemId);
+    const store = best && findStore(stores, best.storeId);
+    if (!store) { none.rows.push(r); return; }
+    if (!groups.has(store.id)) groups.set(store.id, { storeId: store.id, name: store.name, rows: [] });
+    groups.get(store.id).rows.push(r);
+  });
+  const out = Array.from(groups.values()).sort(cmpName);
+  if (none.rows.length) out.push(none);
+  return out;
+}
+// 値段タブのカード: 値段が 1 件以上ある品。名前の部分一致で絞り、カードどうしは品名順、カードの中は安い順
+function priceCards(data, query) {
+  const d = data || {};
+  const q = nameKey(query);
+  const out = [];
+  allItems(d.foods, d.goods).forEach((it) => {
+    if (q && !nameKey(it.name).includes(q)) return;
+    const list = sortPrices(pricesFor(d.prices, it.type, it.id));
+    if (!list.length) return;
+    out.push(Object.assign(it, { prices: list, best: list[0], unitLabel: priceBasisLabel(it.priceBasis) }));
+  });
+  return out;
+}
+// --- 削除の連鎖(13.5) ---
+function countStorePrices(prices, storeId) { return (Array.isArray(prices) ? prices : []).filter((p) => p && p.storeId === storeId).length; }
+// 店を消す: その店の値段も消えた { stores, prices } を返す
+function removeStore(stores, prices, storeId) {
+  return {
+    stores: (Array.isArray(stores) ? stores : []).filter((s) => !(s && s.id === storeId)),
+    prices: (Array.isArray(prices) ? prices : []).filter((p) => !(p && p.storeId === storeId))
+  };
+}
+// その品の値段の数と、買い物リストの行の数
+function countItemRefs(prices, shopping, itemType, itemId) {
+  return { prices: pricesFor(prices, itemType, itemId).length, shopping: (Array.isArray(shopping) ? shopping : []).filter((r) => sameItem(r, itemType, itemId)).length };
+}
+// 品(マイ食品・goods)を消すとき: その品の値段と買い物リストの行を除いた { prices, shopping } を返す
+function removeItemRefs(prices, shopping, itemType, itemId) {
+  return {
+    prices: (Array.isArray(prices) ? prices : []).filter((p) => !sameItem(p, itemType, itemId)),
+    shopping: (Array.isArray(shopping) ? shopping : []).filter((r) => !sameItem(r, itemType, itemId))
+  };
+}
+// 確認文に足す「値段 2 件と買い物リストの 1 行も消えます。」(どちらも無ければ '')
+function itemRefsNote(refs) {
+  const parts = [];
+  if (refs.prices) parts.push('値段 ' + refs.prices + ' 件');
+  if (refs.shopping) parts.push('買い物リストの ' + refs.shopping + ' 行');
+  return parts.length ? parts.join('と') + 'も消えます。' : '';
+}
+// 買ったものを片付ける: チェック済みを除いた kept と、除いた removed(元に戻す用に元の位置つき)
+function clearChecked(shopping) {
+  const list = Array.isArray(shopping) ? shopping : [];
+  const kept = [], removed = [];
+  list.forEach((r, index) => { if (r && r.checked) removed.push({ index, row: r }); else kept.push(r); });
+  return { kept, removed };
+}
+// 片付けを元に戻す: 除いた行を元の位置に差し戻す(その間に増えた行は後ろに残る)
+function restoreRemoved(shopping, removed) {
+  const out = (Array.isArray(shopping) ? shopping : []).slice();
+  removed.slice().sort((a, b) => a.index - b.index).forEach(({ index, row }) => {
+    if (!out.some((r) => r && r.id === row.id)) out.splice(Math.min(index, out.length), 0, row);
+  });
+  return out;
+}
+
 function countEntries(days) {
   if (!days || typeof days !== 'object') return 0;
   return Object.keys(days).reduce((n, k) => n + (days[k] && Array.isArray(days[k].entries) ? days[k].entries.length : 0), 0);
@@ -1096,6 +1940,10 @@ function emptyState(nowIso) {
     days: {},
     foods: [],
     sets: [],
+    stores: [],     // v1.2.0: 店
+    goods: [],      // v1.2.0: 食品ではない品
+    prices: [],     // v1.2.0: 品 × 店の値段
+    shopping: [],   // v1.2.0: 買い物リスト
     meta: { createdAt: nowIso || localIso(new Date()), lastBackupAt: null, appVersion: APP_VERSION }
   };
 }
@@ -1141,14 +1989,84 @@ function normFood(f) {
   const name = typeof f.name === 'string' ? f.name.trim().slice(0, MAX_NAME) : '';
   if (!name) return null;
   const basis = f.basis === 'per100g' ? 'per100g' : 'perServing';
-  return {
+  const out = {
     id: typeof f.id === 'string' && f.id ? f.id.slice(0, 64) : genId('f'),
     name, basis,
     servingLabel: basis === 'per100g' ? '' : (typeof f.servingLabel === 'string' && f.servingLabel.trim() ? f.servingLabel.trim().slice(0, 20) : '1食'),
     p: clampG(f.p), f: clampG(f.f), c: clampG(f.c),
     usedAt: isValidIso(f.usedAt) ? f.usedAt : null,
-    useCount: Math.max(0, Math.round(toNum(f.useCount)))
+    useCount: Math.max(0, Math.round(toNum(f.useCount))),
+    priceBasis: priceBasisOf(f)                 // v1.2.0: 値段の単位。無ければ basis から決める
   };
+  if (f.pending === true) out.pending = true;   // v1.2.0: PFC未登録(true のときだけ持つ)
+  const sc = normShopCount(f.shopCount);
+  if (sc) out.shopCount = sc;                   // v1.2.0: 買い物リストに入れた回数(1 以上のときだけ持つ)
+  return out;
+}
+// 買い物リストに入れた回数(「よく買うもの」の並び順)。0 以上の整数
+function normShopCount(v) { return typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(999999, Math.round(v))) : 0; }
+// --- 買い物・値段(13.5)。オブジェクトでない要素・型の合わない値・存在しない参照は捨てる ---
+function normName(v, max) { return typeof v === 'string' ? v.trim().slice(0, max || MAX_NAME) : ''; }
+function normId(v, prefix) { return typeof v === 'string' && v ? v.slice(0, 64) : genId(prefix); }
+function isPlainObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+function normStore(s) {
+  if (!isPlainObj(s)) return null;
+  const name = normName(s.name, MAX_STORE_NAME);
+  if (!name) return null;
+  return { id: normId(s.id, 'st'), name, createdAt: isValidIso(s.createdAt) ? s.createdAt : null };
+}
+function normGoods(g) {
+  if (!isPlainObj(g)) return null;
+  const name = normName(g.name);
+  if (!name) return null;
+  const out = { id: normId(g.id, 'g'), name, priceBasis: normPriceBasis(g.priceBasis), createdAt: isValidIso(g.createdAt) ? g.createdAt : null };
+  const sc = normShopCount(g.shopCount);
+  if (sc) out.shopCount = sc;
+  return out;
+}
+// 値段 1 件。basisOf(itemType, itemId) は品の値段の単位(品が無ければ null)、hasStore(id) は店があるか。
+// price は 0 以上の整数。100gあたりの品は grams(0 より大きい数)が必須、1個あたりの品は grams を持たない
+function normPrice(p, basisOf, hasStore) {
+  if (!isPlainObj(p)) return null;
+  if (ITEM_TYPES.indexOf(p.itemType) < 0 || typeof p.itemId !== 'string' || typeof p.storeId !== 'string') return null;
+  const basis = basisOf(p.itemType, p.itemId);
+  if (!basis || !hasStore(p.storeId)) return null;
+  if (typeof p.price !== 'number' && typeof p.price !== 'string') return null;
+  const price = parsePrice(p.price);
+  if (price === null) return null;
+  const out = { id: normId(p.id, 'pr'), itemType: p.itemType, itemId: p.itemId, storeId: p.storeId, price };
+  if (basis === 'per100g') {
+    if (typeof p.grams !== 'number' && typeof p.grams !== 'string') return null;
+    const grams = parseGrams(p.grams);
+    if (grams === null) return null;
+    out.grams = grams;
+  }
+  out.updatedAt = isValidIso(p.updatedAt) ? p.updatedAt : null;
+  return out;
+}
+// 買い物リストの 1 行。品が無い行は捨てる。checked は true のときだけ買った状態
+function normShopping(r, hasItem) {
+  if (!isPlainObj(r)) return null;
+  if (ITEM_TYPES.indexOf(r.itemType) < 0 || typeof r.itemId !== 'string' || !hasItem(r.itemType, r.itemId)) return null;
+  const checked = r.checked === true;
+  return {
+    id: normId(r.id, 'sh'), itemType: r.itemType, itemId: r.itemId,
+    qty: normName(r.qty, MAX_QTY), checked,
+    addedAt: isValidIso(r.addedAt) ? r.addedAt : null,
+    checkedAt: checked && isValidIso(r.checkedAt) ? r.checkedAt : null
+  };
+}
+// id が重複していたら振り直しながら、正規化した要素を集める
+function normList(src, fn, prefix) {
+  const ids = new Set();
+  const out = [];
+  (Array.isArray(src) ? src : []).forEach((x) => {
+    const v = fn(x);
+    if (!v) return;
+    if (ids.has(v.id)) v.id = genId(prefix);
+    ids.add(v.id); out.push(v);
+  });
+  return out;
 }
 // セットの品 1 つ。foodId が文字列でない、amount が数でない(0 以下も含む)ものは捨てる
 function normSetItem(it) {
@@ -1188,6 +2106,10 @@ function normalize(obj, nowIso) {
     days: {},
     foods: [],
     sets: [],
+    stores: [],
+    goods: [],
+    prices: [],
+    shopping: [],
     meta: {
       createdAt: src.meta && isValidIso(src.meta.createdAt) ? src.meta.createdAt : base.meta.createdAt,
       lastBackupAt: src.meta && isValidIso(src.meta.lastBackupAt) ? src.meta.lastBackupAt : null,
@@ -1221,6 +2143,22 @@ function normalize(obj, nowIso) {
     if (sids.has(ns.id)) ns.id = genId('s');
     sids.add(ns.id); out.sets.push(ns);
   });
+  // 店・食品ではない品・値段・買い物リスト(v1.2.0 で追加)。無い・配列でないなら []
+  out.stores = normList(src.stores, normStore, 'st');
+  out.goods = normList(src.goods, normGoods, 'g');
+  const foodBasis = new Map(out.foods.map((f) => [f.id, f.priceBasis]));
+  const goodsBasis = new Map(out.goods.map((g) => [g.id, g.priceBasis]));
+  const basisOf = (type, id) => (type === 'food' ? foodBasis.get(id) : goodsBasis.get(id)) || null;
+  const storeIds = new Set(out.stores.map((s) => s.id));
+  // 値段は 1品 × 1店 = 1件。同じ組み合わせが複数あれば、新しく更新したほうを残す
+  const byPair = new Map();
+  normList(src.prices, (p) => normPrice(p, basisOf, (id) => storeIds.has(id)), 'pr').forEach((p) => {
+    const k = p.itemType + '\n' + p.itemId + '\n' + p.storeId;
+    const old = byPair.get(k);
+    if (!old || isoTime(p.updatedAt) > isoTime(old.updatedAt)) byPair.set(k, p);
+  });
+  out.prices = Array.from(byPair.values());
+  out.shopping = normList(src.shopping, (r) => normShopping(r, (type, id) => !!basisOf(type, id)), 'sh');
   return out;
 }
 // マイグレーション: 旧版 → 現行版。v1 では何もしない。戻り値 { data, from }
@@ -1263,6 +2201,14 @@ const core = {
   sumEntries, judge, remainingLabel, statFor, dayStats, entryLabel, sortEntries, sortByUsed, sortFoods, sortSets, scaleFood, amountDefaults, basisLabel,
   findFood, setAmount, setItemValues, setTotals, setSubLabel, countSetsUsingFood, removeFoodFromSets, resetFoodAmountInSets,
   recentItems, weekSummary, countEntries, backupNeeded, formatLastBackup,
+  CHART_MODES, weekKeys, dayData, kcalDirection, weekAvgLabel, weekAverage, weekChartData, chartGeometry, updateCheckDue,
+  isPending, activeFoods, pendingFoods, countPending, defaultPriceBasis, priceBasisOf,
+  ITEM_TYPES, MAX_STORE_NAME, MAX_QTY, MAX_PRICE, FREQUENT_LIMIT, SUGGEST_LIMIT, NO_PRICE_GROUP,
+  normPriceBasis, nameKey, parsePrice, parseGrams, unitValue, unitPrice, yen, priceUnitSuffix, priceBasisLabel, priceLabel, priceInputText, shortDate,
+  pricesFor, sortPrices, bestPrice, findPrice, upsertPrice, findStore, sortStores, findStoreByName, lastUsedStoreId,
+  itemOf, allItems, shopSuggestions, exactItem, frequentShopping, sortShopping, countUnchecked, groupByBestStore, priceCards,
+  countStorePrices, removeStore, countItemRefs, removeItemRefs, itemRefsNote, clearChecked, restoreRemoved,
+  normShopCount, normStore, normGoods, normPrice, normShopping,
   genId, emptyState, normTargets, normDirection, isNumeric, normEntry, normFood, normSetItem, normSet, normalize, migrate, structureError, validateImport, escapeHtml
 };
 if (typeof window !== 'undefined') window.PFC = { core };
@@ -1289,8 +2235,13 @@ const state = {
   followToday: true,        // 「今日」を表示中なら日付が変わったとき追従する
   renderedToday: null,      // 最後に描画したときの「今日」(日付が変わったかの判定用)
   dayTimer: null,           // 次の 0 時に再描画するタイマー
-  view: 'main',             // 'main' | 'settings' | 'foods' | 'sets'
+  view: 'home',             // 表示中の画面: タブ('record' | 'foods' | 'home' | 'shopping' | 'prices')か 'settings'
+  tab: 'home',              // 最後に開いていたタブ(設定から戻る先)。起動時は必ずホーム(覚えない)
+  foodsSeg: 'foods',        // マイ食品タブの切替: 'foods' | 'sets' | 'pending'
+  chartMode: 'kcal',        // ホームの推移グラフ: 'kcal' | 'p' | 'f' | 'c'
   sheetDateKey: null,       // 記録シート/分量シートを開いたときの保存先の日(開いている間に日付が変わっても動かさない)
+  sheetFromHome: false,     // いま開いているシートをホームの入力エリアから開いた(常に今日に入れる。記録タブの表示日は動かさない)
+  priceBasisTouched: false, // マイ食品シートで「値段の単位」を自分で選んだ(選んでいなければ基準の切替に合わせて変える)
   sheetTime: null,          // 分量シートを開いたときの時刻(追加時の time に使う)
   editingEntryId: null,     // 編集中の記録 id(追加時は null)
   editingFoodId: null,      // 編集中のマイ食品 id
@@ -1300,6 +2251,16 @@ const state = {
   setAddId: null,           // セット追加シートの対象セット id
   setAddFoodIds: [],        // セット追加シートの各行のマイ食品 id(開いたときの中身。行の data-index と対応)
   foodSheetForSet: false,   // マイ食品の登録シートを、セットの食品選択シートから重ねて開いた
+  foodSheetWasPending: false, // マイ食品シートで PFC未登録の食品を開いた(保存するとふつうのマイ食品になる)
+  shopGrouped: false,       // 買い物リストの「安い店ごとに分ける」(初期はオフ。覚えない)
+  shopNewKind: 'food',      // 候補に無い名前で追加するときの種類: 'food'(PFCはあとで)| 'goods'(食品ではない)
+  boughtRowId: null,        // 買ったシートを開いている買い物リストの行 id
+  shopItemRowId: null,      // 品のシート(数量メモなど)を開いている行 id
+  priceQuery: '',           // 値段タブの検索欄
+  priceMode: 'best',        // 値段タブの表示: 'best'(最安だけ)| 'all'(すべての店)
+  priceOpen: new Set(),     // 値段タブで開いているカード('food:f_…' など)
+  editingPriceId: null,     // 値段シートで編集中の値段 id(追加は null)
+  priceNewKind: 'food',     // 値段シートで新しい品を作るときの種類
   recent: [],               // 「最近の記録」チップの内容(index でタップ先を引く)
   generation: 0,            // 読み込み/全削除のたびに増やす(元に戻すの安全確認用)
   toastTimer: null,
@@ -1391,90 +2352,174 @@ function scheduleMidnightRender() {
 function catchUpDay() { if (today() !== state.renderedToday) render(); }
 
 // ---------- 描画 ----------
+const TABS = ['record', 'foods', 'home', 'shopping', 'prices'];
+const VIEWS = TABS.concat('settings');
 function render() {
   const t = today();
   if (state.followToday) state.dateKey = t;
   if (state.dateKey > t) { state.dateKey = t; state.followToday = true; }
   state.renderedToday = t;
   scheduleMidnightRender();
-  $('view-main').hidden = state.view !== 'main';
-  $('view-settings').hidden = state.view !== 'settings';
-  $('view-foods').hidden = state.view !== 'foods';
-  $('view-sets').hidden = state.view !== 'sets';
-  if (state.view === 'main') renderMain(t);
-  else if (state.view === 'foods') renderFoods();
-  else if (state.view === 'sets') renderSets();
-  else renderSettingsInfo();
+  VIEWS.forEach((name) => { $('view-' + name).hidden = state.view !== name; });
+  document.body.classList.toggle('no-tabbar', state.view === 'settings'); // 設定を開いている間はタブバーを隠す
+  // タブの中身は小さいので毎回すべて描き直す(どのタブに切り替えても最新の状態にするため)
+  state.recent = core.recentItems(state.data.days, t); // 「最近の記録」チップ(記録タブとホームで同じもの。index でタップ先を引く)
+  renderHome(t);
+  renderRecord(t);
+  renderFoodsTab();
+  renderShopping();
+  renderPrices();
+  renderTabbar();
+  if (state.view === 'settings') renderSettingsInfo();
   // 記録シートを開いたまま日付が変わった場合、保存先の表示を正直に更新する(「今日」→「昨日」)
   if (!$('sheet-entry').hidden && state.sheetDateKey) $('entry-date').textContent = core.formatDateLabel(state.sheetDateKey, t) + ' に保存します';
   if (!$('sheet-set-add').hidden && state.sheetDateKey) $('set-add-date').textContent = core.formatDateLabel(state.sheetDateKey, t) + ' に追加します';
 }
-function renderMain(t) {
+
+// --- 共通部品 ---
+// 1 栄養素分のバー(.meter)に集計を入れる。ホームの #stat-* と記録タブの #rec-stat-* で共用
+function fillMeter(el, k, s) {
+  el.dataset.status = s.status;
+  el.querySelector('.consumed').textContent = core.fmtInt(s.consumed);
+  el.querySelector('.target').textContent = core.fmtInt(s.target);
+  el.querySelector('.remaining').textContent = s.remaining;
+  el.querySelector('.bar-fill').style.width = s.fillPct + '%';
+  el.querySelector('.bar-over').style.width = s.overPct + '%';
+  el.setAttribute('aria-label', core.NUTRIENT_LABEL[k] + ' ' + core.fmtInt(s.consumed) + 'g / 目標 ' + core.fmtInt(s.target) + 'g ' + s.remaining);
+}
+// P/F/C 3 本と kcal をまとめて入れる(prefix は 'stat-' か 'rec-stat-')
+function fillStats(prefix, stats) {
+  core.NUTRIENTS.forEach((k) => fillMeter($(prefix + k), k, stats[k]));
+  $(prefix + 'kcal').querySelector('.consumed').textContent = core.fmtInt(stats.kcal.consumed);
+  $(prefix + 'kcal').querySelector('.target').textContent = core.fmtInt(stats.kcal.target);
+}
+function statsFor(key) {
+  const day = state.data.days[key];
+  return core.dayStats(day ? day.entries : [], targetsFor(key), state.data.settings.direction);
+}
+// チップ列の中身を差し替える。末尾の「＋ 〜を管理」チップ(.chip.manage)は HTML に固定で置いてあり、その前に差し込む
+function fillChipRow(row, selector, html) {
+  row.querySelectorAll(selector).forEach((el) => el.remove());
+  row.querySelector('.chip.manage').insertAdjacentHTML('beforebegin', html);
+}
+function setChipsHtml(sets, foods) {
+  return sets.map((st) =>
+    '<button type="button" class="chip" data-set-id="' + esc(st.id) + '" aria-label="セット ' + esc(st.name) + ' を追加">' +
+      '<span class="name">' + esc(st.name) + '</span>' +
+      '<span class="sub num">' + esc(core.setSubLabel(st, foods)) + '</span>' +
+    '</button>').join('');
+}
+function foodChipsHtml(foods) {
+  return foods.map((f) =>
+    '<button type="button" class="chip" data-food-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' を追加">' +
+      '<span class="name">' + esc(f.name) + '</span>' +
+      '<span class="sub">' + esc(core.basisLabel(f)) + ' ' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + 'kcal</span>' +
+    '</button>').join('');
+}
+function recentChipsHtml(recent) {
+  return recent.length ? recent.map((r, i) =>
+    '<button type="button" class="chip" data-recent-index="' + i + '" aria-label="' + esc(r.label) + ' を追加">' +
+      '<span class="name">' + esc(r.label) + '</span>' +
+      '<span class="sub">' + (r.name ? 'P' + core.fmtG(r.p) + ' F' + core.fmtG(r.f) + ' C' + core.fmtG(r.c) + ' ' : '') + core.fmtInt(r.kcal) + 'kcal</span>' +
+    '</button>').join('') : '<span class="empty">記録するとここに表示されます</span>';
+}
+// クイック追加の 3 列(セット・マイ食品・最近)。記録タブとホームの入力エリアで同じものを出す
+function renderQuickRows(setRow, foodRow, recentRow, t) {
+  const data = state.data;
+  const sets = core.sortSets(data.sets);
+  fillChipRow(setRow, '.chip[data-set-id]', setChipsHtml(sets, data.foods));
+  const manage = setRow.querySelector('.chip.manage');
+  manage.querySelector('.name').textContent = sets.length ? '＋ セットを管理' : '＋ セットを作る';
+  manage.setAttribute('aria-label', sets.length ? 'セットを管理' : 'セットを作る');
+  fillChipRow(foodRow, '.chip[data-food-id]', foodChipsHtml(core.sortFoods(core.activeFoods(data.foods)))); // PFC未登録は出さない
+  recentRow.innerHTML = recentChipsHtml(state.recent);
+}
+
+// --- ホームタブ(常に今日) ---
+function renderHome(t) {
+  const data = state.data;
+  $('home-date').textContent = core.formatDateLabel(t, t);
+  $('backup-banner').hidden = !core.backupNeeded(data, new Date());
+  fillStats('stat-', statsFor(t));
+
+  // 直近 7 日(ふつうの <button> のまま。読み上げ名は「9/28(月) 記録なし」のように日付で)。タップで記録タブのその日へ
+  $('week-strip').innerHTML = core.weekSummary(data, t).map((d) =>
+    '<button type="button" class="day' + (d.hasEntries ? '' : ' empty') + (d.isToday ? ' today selected' : '') + '" data-date="' + d.key + '"' +
+      (d.isToday ? ' aria-current="date"' : '') + ' aria-label="' + core.formatDateLabel(d.key, t) + (d.hasEntries ? '' : ' 記録なし') + '">' +
+      '<span class="bars">' + d.bars.map((b) => '<span class="mini" data-n="' + b.n + '" data-status="' + b.status + '"><i style="height:' + Math.round(b.pct) + '%"></i></span>').join('') + '</span>' +
+      '<span class="wd">' + d.weekday + '</span>' +
+    '</button>').join('');
+
+  renderWeekAverage(t);
+  renderWeekChart(t);
+  renderQuickRows($('home-set-chips'), $('home-food-chips'), $('home-recent-chips'), t);
+}
+// 1週間の平均: 「記録のある5日間の平均」と、P/F/C・kcal の「平均 132 / 目標 150 g」
+function renderWeekAverage(t) {
+  const avg = core.weekAverage(state.data, t);
+  $('week-avg-title').textContent = avg.n ? avg.label + '(直近7日)' : '1週間の平均';
+  $('week-avg-rows').hidden = !avg.n;
+  $('week-avg-empty').hidden = !!avg.n;
+  $('week-avg-empty').textContent = core.weekAvgLabel(0);
+  ['p', 'f', 'c', 'kcal'].forEach((k) => {
+    const row = $('week-avg').querySelector('.avg[data-n="' + k + '"]');
+    row.dataset.status = avg[k].status;
+    row.querySelector('.avg-val').textContent = core.fmtInt(avg[k].avg);
+    row.querySelector('.avg-target').textContent = core.fmtInt(avg[k].target);
+    const unit = k === 'kcal' ? 'kcal' : 'g';
+    row.setAttribute('aria-label', (k === 'kcal' ? 'kcal' : core.NUTRIENT_LABEL[k]) + ' 平均 ' + core.fmtInt(avg[k].avg) + unit + ' / 目標 ' + core.fmtInt(avg[k].target) + unit);
+  });
+}
+// 1週間の推移グラフ(インライン SVG)。棒 = その日の値(記録の無い日は棒なし)、破線 = その日の目標
+function renderWeekChart(t) {
+  const chart = core.weekChartData(state.data, t, state.chartMode);
+  const g = core.chartGeometry(chart);
+  const r1 = (n) => Math.round(n * 10) / 10;
+  let bars = '', vals = '', labels = '', target = '';
+  chart.days.forEach((d, i) => {
+    const sl = g.slots[i];
+    const pad = Math.min(5, sl.w * 0.1);
+    target += 'M' + r1(sl.x + pad) + ' ' + r1(sl.targetY) + 'H' + r1(sl.x + sl.w - pad);
+    labels += '<text class="cwd' + (d.isToday ? ' today' : '') + '" x="' + r1(sl.cx) + '" y="' + (g.height - 6) + '">' + (d.isToday ? '今日' : d.weekday) + '</text>';
+    if (!d.hasEntries) return;
+    bars += '<rect class="cbar" data-date="' + d.key + '" data-status="' + d.status + '" data-value="' + d.value + '" x="' + r1(sl.barX) + '" y="' + r1(sl.barY) + '" width="' + sl.barW + '" height="' + r1(Math.max(sl.barH, 1)) + '" rx="3"></rect>';
+    // 値ラベルは棒の上。目標の破線がすぐ上にあって重なるときは、破線のさらに上に出す
+    const labelY = sl.targetY < sl.barY && sl.barY - sl.targetY < 16 ? sl.targetY - 5 : sl.barY - 5;
+    vals += '<text class="cval num" x="' + r1(sl.cx) + '" y="' + r1(Math.max(12, labelY)) + '">' + core.fmtInt(d.value) + '</text>';
+  });
+  const slots = chart.days.map((d) => '<g class="slot" data-date="' + d.key + '" data-has="' + (d.hasEntries ? 1 : 0) + '" data-target="' + d.target + '"></g>').join('');
+  const unit = chart.unit;
+  const summary = chart.days.map((d) => core.formatDateLabel(d.key, t) + ' ' + (d.hasEntries ? core.fmtInt(d.value) + unit : '記録なし') + '(目標 ' + core.fmtInt(d.target) + unit + ')').join('、');
+  $('week-chart-svg').innerHTML =
+    '<svg viewBox="0 0 ' + g.width + ' ' + g.height + '" data-mode="' + chart.mode + '" role="img" aria-label="1週間の推移(' + (chart.mode === 'kcal' ? 'kcal' : core.NUTRIENT_LABEL[chart.mode]) + ')。' + esc(summary) + '">' +
+      slots +
+      '<line class="cbase" x1="0" x2="' + g.width + '" y1="' + g.baseY + '" y2="' + g.baseY + '"></line>' +
+      bars +
+      '<path class="ctarget" d="' + target + '"></path>' +
+      vals + labels +
+    '</svg>';
+  $('week-chart').querySelectorAll('.chart-mode').forEach((b) => {
+    const on = b.dataset.mode === chart.mode;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
+// --- 記録タブ(表示中の日) ---
+function renderRecord(t) {
   const data = state.data;
   const key = state.dateKey;
   const day = data.days[key];
   const entries = core.sortEntries(day ? day.entries : []);
-  const stats = core.dayStats(entries, targetsFor(key), data.settings.direction);
 
   // ヘッダ(読み上げ名には表示中の日付を含める)
   const dateLabel = core.formatDateLabel(key, t);
   $('date-label').textContent = dateLabel;
   $('date-label').setAttribute('aria-label', key === t ? dateLabel : dateLabel + '(タップで今日に戻る)');
   $('btn-next-day').disabled = key >= t;
-  $('backup-banner').hidden = !core.backupNeeded(data, new Date());
 
-  // P/F/C バー
-  core.NUTRIENTS.forEach((k) => {
-    const s = stats[k];
-    const el = $('stat-' + k);
-    el.dataset.status = s.status;
-    el.querySelector('.consumed').textContent = core.fmtInt(s.consumed);
-    el.querySelector('.target').textContent = core.fmtInt(s.target);
-    el.querySelector('.remaining').textContent = s.remaining;
-    el.querySelector('.bar-fill').style.width = s.fillPct + '%';
-    el.querySelector('.bar-over').style.width = s.overPct + '%';
-    el.setAttribute('aria-label', core.NUTRIENT_LABEL[k] + ' ' + core.fmtInt(s.consumed) + 'g / 目標 ' + core.fmtInt(s.target) + 'g ' + s.remaining);
-  });
-  $('stat-kcal').querySelector('.consumed').textContent = core.fmtInt(stats.kcal.consumed);
-  $('stat-kcal').querySelector('.target').textContent = core.fmtInt(stats.kcal.target);
-
-  // 直近 7 日(ふつうの <button> のまま。読み上げ名は「9/28(月) 記録なし」のように日付で)
-  $('week-strip').innerHTML = core.weekSummary(data, t).map((d) =>
-    '<button type="button" class="day' + (d.hasEntries ? '' : ' empty') + (d.isToday ? ' today' : '') + (d.key === key ? ' selected' : '') + '" data-date="' + d.key + '"' +
-      (d.key === key ? ' aria-current="date"' : '') + ' aria-label="' + core.formatDateLabel(d.key, t) + (d.hasEntries ? '' : ' 記録なし') + '">' +
-      '<span class="bars">' + d.bars.map((b) => '<span class="mini" data-n="' + b.n + '" data-status="' + b.status + '"><i style="height:' + Math.round(b.pct) + '%"></i></span>').join('') + '</span>' +
-      '<span class="wd">' + d.weekday + '</span>' +
-    '</button>').join('');
-
-  // セットチップ(「＋ セットを管理」チップは HTML に固定で置いてあり、その前に差し込む。セットが無ければ「＋ セットを作る」だけ)
-  const sets = core.sortSets(data.sets);
-  $('set-chips').querySelectorAll('.chip[data-set-id]').forEach((el) => el.remove());
-  $('btn-sets-manage').insertAdjacentHTML('beforebegin', sets.map((st) =>
-    '<button type="button" class="chip" data-set-id="' + esc(st.id) + '" aria-label="セット ' + esc(st.name) + ' を追加">' +
-      '<span class="name">' + esc(st.name) + '</span>' +
-      '<span class="sub num">' + esc(core.setSubLabel(st, data.foods)) + '</span>' +
-    '</button>').join(''));
-  $('btn-sets-manage').querySelector('.name').textContent = sets.length ? '＋ セットを管理' : '＋ セットを作る';
-  $('btn-sets-manage').setAttribute('aria-label', sets.length ? 'セットを管理' : 'セットを作る');
-
-  // マイ食品チップ
-  const foods = core.sortFoods(data.foods);
-  // 「＋ マイ食品を管理」チップは HTML に固定で置いてあり、その前に食品チップを差し込む
-  $('food-chips').querySelectorAll('.chip[data-food-id]').forEach((el) => el.remove());
-  $('btn-foods-manage').insertAdjacentHTML('beforebegin', foods.map((f) =>
-    '<button type="button" class="chip" data-food-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' を追加">' +
-      '<span class="name">' + esc(f.name) + '</span>' +
-      '<span class="sub">' + esc(core.basisLabel(f)) + ' ' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + 'kcal</span>' +
-    '</button>').join(''));
-
-  // 最近の記録チップ
-  const recent = core.recentItems(data.days, t);
-  $('recent-chips').innerHTML = recent.length ? recent.map((r, i) =>
-    '<button type="button" class="chip" data-recent-index="' + i + '" aria-label="' + esc(r.label) + ' を追加">' +
-      '<span class="name">' + esc(r.label) + '</span>' +
-      '<span class="sub">' + (r.name ? 'P' + core.fmtG(r.p) + ' F' + core.fmtG(r.f) + ' C' + core.fmtG(r.c) + ' ' : '') + core.fmtInt(r.kcal) + 'kcal</span>' +
-    '</button>').join('') : '<span class="empty">記録するとここに表示されます</span>';
-  state.recent = recent;
+  fillStats('rec-stat-', statsFor(key));
+  renderQuickRows($('set-chips'), $('food-chips'), $('recent-chips'), t);
 
   // 記録一覧
   $('entries-title').textContent = key === t ? '今日の記録' : '記録(' + core.formatDateLabel(key, t) + ')';
@@ -1483,18 +2528,41 @@ function renderMain(t) {
     return '<button type="button" class="entry" data-id="' + esc(e.id) + '" aria-label="' + esc(e.name || '無題') + ' を編集">' +
       '<span class="time num">' + esc(e.time) + '</span>' +
       '<span class="body"><span class="name' + (e.name ? '' : ' untitled') + '">' + name + '</span>' +
-      '<span class="pfc num">P<b class="vp">' + core.fmtG(e.p) + '</b> F<b class="vf">' + core.fmtG(e.f) + '</b> C<b class="vc">' + core.fmtG(e.c) + '</b></span></span>' +
+      '<span class="pfc num">' + pfcColsHtml(e) + '</span></span>' +
       '<span class="kcal num">' + core.fmtInt(core.calcKcal(e.p, e.f, e.c)) + '<small>kcal</small></span>' +
     '</button>';
   }).join('');
   $('entry-empty').hidden = entries.length > 0;
 }
+
+// --- マイ食品タブ(マイ食品 / セット / PFC未登録) ---
+function renderFoodsTab() {
+  const seg = state.foodsSeg;
+  $('foods-seg').querySelectorAll('.seg').forEach((b) => {
+    const on = b.dataset.seg === seg;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  $('view-foods').querySelectorAll('.foods-pane').forEach((p) => { p.hidden = p.dataset.pane !== seg; });
+  const n = core.countPending(state.data.foods);
+  const badge = $('foods-seg').querySelector('.seg[data-seg="pending"] .badge');
+  badge.textContent = String(n);
+  badge.hidden = n === 0;
+  renderFoods();
+  renderSets();
+  renderPending();
+}
+// P/F/C を等幅の3列で出す HTML(記録一覧・マイ食品一覧・セットの行で共通)
+function pfcColsHtml(v) {
+  return '<span class="pfc-cols">' + core.NUTRIENTS.map((k) =>
+    '<span class="m"><i>' + k.toUpperCase() + '</i><b class="v' + k + '">' + core.fmtG(v[k]) + '</b></span>').join('') + '</span>';
+}
 function renderFoods() {
-  const foods = core.sortFoods(state.data.foods);
+  const foods = core.sortFoods(core.activeFoods(state.data.foods)); // PFC未登録は「PFC未登録」の切替に出す
   $('food-list').innerHTML = foods.map((f) =>
     '<button type="button" class="food" data-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' を編集">' +
       '<span class="body"><span class="name">' + esc(f.name) + '</span>' +
-      '<span class="pfc num">' + esc(core.basisLabel(f)) + ' P<b class="vp">' + core.fmtG(f.p) + '</b> F<b class="vf">' + core.fmtG(f.f) + '</b> C<b class="vc">' + core.fmtG(f.c) + '</b></span></span>' +
+      '<span class="pfc num">' + pfcColsHtml(f) + '<span class="pfc-note">' + esc(core.basisLabel(f)) + '</span></span></span>' +
       '<span class="kcal num">' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + '<small>kcal</small></span>' +
     '</button>').join('');
   $('food-empty').hidden = foods.length > 0;
@@ -1513,6 +2581,166 @@ function renderSets() {
     '</button>';
   }).join('');
   $('set-empty').hidden = sets.length > 0;
+}
+// PFC未登録の一覧。各行の「PFCを入れる」でマイ食品の編集シートを開く
+function renderPending() {
+  const list = core.pendingFoods(state.data.foods);
+  $('pending-list').innerHTML = list.map((f) =>
+    '<div class="pending" data-id="' + esc(f.id) + '">' +
+      '<span class="body"><span class="name">' + esc(f.name) + '</span><span class="sub">P/F/C がまだ入っていません</span></span>' +
+      '<button type="button" class="btn-fill-pfc" aria-label="' + esc(f.name) + ' の PFC を入れる">PFCを入れる</button>' +
+    '</div>').join('');
+  $('pending-empty').hidden = list.length > 0;
+}
+
+// --- 買い物タブ(13.6): 追加欄の候補・よく買うもの・リスト ---
+// 品のオブジェクト(マイ食品か、食品ではない品)。無ければ null
+function itemObj(type, id) {
+  if (type === 'food') return state.data.foods.find((f) => f.id === id) || null;
+  if (type === 'goods') return state.data.goods.find((g) => g.id === id) || null;
+  return null;
+}
+function itemInfo(type, id) { return core.itemOf(state.data.foods, state.data.goods, type, id); }
+function findShopRow(id) { return state.data.shopping.find((r) => r.id === id) || null; }
+function storeName(id) { const s = core.findStore(state.data.stores, id); return s ? s.name : ''; }
+// 「最安 業務スーパー ¥175/100g」(値段が無ければ '')
+// 買い物の行の「最安 店 ¥値段」。店名が長いときは店名だけを詰め、値段は必ず見せる
+function bestHtml(type, id, basis) {
+  const best = core.bestPrice(state.data.prices, type, id);
+  const name = best ? storeName(best.storeId) : '';
+  if (!name) return '';
+  return '<span class="best-label">最安</span> <span class="best-store">' + esc(name) + '</span> <span class="best-val">' + esc(core.priceLabel(best, basis)) + '</span>';
+}
+// 切替(.segmented の .seg[data-kind])の表示を kind に合わせる
+function setKindSeg(el, kind) {
+  el.dataset.kind = kind;
+  el.querySelectorAll('.seg[data-kind]').forEach((b) => { const on = b.dataset.kind === kind; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+}
+function renderShopping() {
+  renderShopSuggest();
+  renderShopFrequent();
+  renderShopList();
+}
+function shopInputValue() { return $('shop-input').value.trim().slice(0, core.MAX_NAME); }
+// 入力中の文字に合う候補と、候補に無い名前のときの種類の切替
+function renderShopSuggest() {
+  const d = state.data;
+  const q = shopInputValue();
+  const list = core.shopSuggestions(d.foods, d.goods, d.shopping, q);
+  $('shop-suggest').innerHTML = list.map((it) =>
+    '<button type="button" class="suggest" role="option" data-type="' + it.type + '" data-id="' + esc(it.id) + '" aria-label="' + esc(it.name) + ' をリストに追加">' +
+      '<span class="name">' + esc(it.name) + '</span>' +
+      '<span class="kind' + (it.inList ? ' in-list' : '') + '">' + (it.inList ? 'リストにあります' : esc(it.kind)) + '</span>' +
+    '</button>').join('');
+  $('shop-suggest').hidden = list.length === 0;
+  $('shop-new').hidden = !q || !!core.exactItem(d.foods, d.goods, q);
+  $('shop-new-name').textContent = q;
+  setKindSeg($('shop-new-kind'), state.shopNewKind);
+  $('btn-shop-add').disabled = !q;
+}
+function renderShopFrequent() {
+  const d = state.data;
+  const list = core.frequentShopping(d.foods, d.goods, d.shopping);
+  $('shop-frequent').innerHTML = list.length ? list.map((it) =>
+    '<button type="button" class="chip" data-type="' + it.type + '" data-id="' + esc(it.id) + '" aria-label="' + esc(it.name) + ' をリストに追加">' +
+      '<span class="name">' + esc(it.name) + '</span><span class="sub num">' + it.count + '回</span>' +
+    '</button>').join('') : '<span class="empty">リストに入れた品がここに並びます</span>';
+}
+// リストの 1 行: チェック / 品名(PFC未登録の印)と最安の店 / 数量メモ
+function shopRowHtml(r) {
+  const it = itemInfo(r.itemType, r.itemId);
+  if (!it) return '';
+  const checked = r.checked || r.id === state.boughtRowId; // 買ったシートを開いている間はチェックを付けたまま見せる
+  const best = bestHtml(r.itemType, r.itemId, it.priceBasis);
+  return '<div class="shop-item' + (r.checked ? ' done' : '') + '" data-id="' + esc(r.id) + '">' +
+    '<label class="shop-check-wrap"><input class="shop-check" type="checkbox"' + (checked ? ' checked' : '') + ' aria-label="' + esc(it.name) + (r.checked ? '(買った。外すと未購入に戻す)' : ' を買った') + '"></label>' +
+    '<button type="button" class="shop-body" aria-label="' + esc(it.name) + ' の詳細">' +
+      '<span class="line1"><span class="name">' + esc(it.name) + '</span>' + (it.pending ? '<span class="tag tag-pending">PFC未登録</span>' : '') + '</span>' +
+      '<span class="shop-best num"' + (best ? '' : ' hidden') + '>' + best + '</span>' +
+    '</button>' +
+    '<button type="button" class="shop-qty' + (r.qty ? '' : ' empty') + '" aria-label="' + esc(it.name) + ' の数量メモ' + (r.qty ? '(' + esc(r.qty) + ')' : 'を入れる') + '">' + (r.qty ? esc(r.qty) : '数量') + '</button>' +
+  '</div>';
+}
+function shopHeadHtml(cls, name, n, storeId) {
+  return '<div class="shop-list-head ' + cls + '"' + (storeId !== undefined ? ' data-store-id="' + esc(storeId || '') + '"' : '') + '>' + esc(name) + '<span class="count num">' + n + '品</span></div>';
+}
+// 未チェック(入れた順。「安い店ごとに分ける」なら最安の店ごとに見出し付き)→ 買ったもの(薄く、下に)
+function renderShopList() {
+  const d = state.data;
+  const rows = core.sortShopping(d.shopping);
+  const open = rows.filter((r) => !r.checked), done = rows.filter((r) => r.checked);
+  let html = '';
+  if (state.shopGrouped) {
+    core.groupByBestStore(open, d.prices, d.stores).forEach((g) => { html += shopHeadHtml('shop-group-head', g.name, g.rows.length, g.storeId) + g.rows.map(shopRowHtml).join(''); });
+  } else {
+    html += open.map(shopRowHtml).join('');
+  }
+  if (done.length) html += shopHeadHtml('shop-done-head', '買ったもの', done.length) + done.map(shopRowHtml).join('');
+  $('shop-list').innerHTML = html;
+  $('shop-empty').hidden = rows.length > 0;
+  $('btn-shop-clear').disabled = done.length === 0;
+  $('shop-group-toggle').setAttribute('aria-checked', state.shopGrouped ? 'true' : 'false');
+}
+
+// --- 値段タブ(13.7): 品ごとのカード(最安だけ / すべての店) ---
+function priceKey(type, id) { return type + ':' + id; }
+function renderPrices() {
+  const d = state.data;
+  const all = state.priceMode === 'all';
+  $('price-mode').dataset.mode = state.priceMode;
+  $('price-mode').querySelectorAll('.seg[data-mode]').forEach((b) => { const on = b.dataset.mode === state.priceMode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+  const cards = core.priceCards(d, state.priceQuery);
+  $('price-list').innerHTML = cards.map((c) => priceCardHtml(c, all || state.priceOpen.has(priceKey(c.type, c.id)))).join('');
+  $('price-empty').hidden = cards.length > 0;
+  $('price-empty').textContent = d.prices.length
+    ? '「' + state.priceQuery.trim() + '」に当てはまる品はありません。'
+    : 'まだ値段がありません。買い物リストでチェックしたときや、下の「＋ 値段を追加」から入れられます。';
+}
+// カード: 見出し(品名と単位)、最安の店と値段を大きく。開くとすべての店を安い順に(1位に「最安」)
+function priceCardHtml(c, open) {
+  const t = today();
+  const best = c.best;
+  const u = core.unitPrice(best.price, best.grams, c.priceBasis);
+  const suffix = core.priceUnitSuffix(c.priceBasis);
+  const others = c.prices.length - 1;
+  const rows = c.prices.map((p, i) => {
+    const label = core.priceLabel(p, c.priceBasis);
+    const raw = c.priceBasis === 'per100g' ? core.yen(p.price) + ' / ' + core.fmtG(p.grams) + 'g · ' : '';
+    const upd = core.shortDate(p.updatedAt, t);
+    return '<button type="button" class="price-row' + (i === 0 ? ' best' : '') + '" data-price-id="' + esc(p.id) + '" aria-label="' + esc(storeName(p.storeId) + ' ' + label + (i === 0 ? '(最安)' : '') + ' を編集') + '">' +
+      '<span class="rank">' + (i === 0 ? '<span class="tag tag-best">最安</span>' : (i + 1) + '位') + '</span>' +
+      '<span class="body"><span class="store-name">' + esc(storeName(p.storeId)) + '</span><span class="sub num">' + esc(raw + (upd ? upd + ' 更新' : '')) + '</span></span>' +
+      '<span class="val num">' + esc(label) + '</span>' +
+    '</button>';
+  }).join('');
+  const upd = core.shortDate(best.updatedAt, t);
+  return '<section class="card price-card' + (open ? ' open' : '') + '" data-type="' + c.type + '" data-id="' + esc(c.id) + '">' +
+    '<button type="button" class="price-toggle" aria-expanded="' + (open ? 'true' : 'false') + '" aria-label="' + esc(c.name + ' 最安 ' + storeName(best.storeId) + ' ' + core.priceLabel(best, c.priceBasis) + '(タップですべての店)') + '">' +
+      '<span class="price-head"><span class="name">' + esc(c.name) + '</span><span class="unit-label">' + esc(c.unitLabel) + '</span><span class="chev" aria-hidden="true">›</span></span>' +
+      '<span class="price-best"><span class="store-name">' + esc(storeName(best.storeId)) + '</span>' +
+        '<b class="val num">' + (u === null ? '-' : core.yen(u)) + '<small>' + suffix + '</small></b>' +
+        (others > 0 ? '<span class="count">ほか ' + others + '店</span>' : '') +
+        (upd ? '<span class="updated num">' + esc(upd) + ' 更新</span>' : '') +
+      '</span>' +
+    '</button>' +
+    '<div class="price-rows"' + (open ? '' : ' hidden') + '>' + rows + '</div>' +
+  '</section>';
+}
+// 買い物タブのバッジ: 未チェックの品の数(13.1)
+function shoppingBadgeCount() { return core.countUnchecked(state.data.shopping); }
+
+// --- タブバー: 選択中のタブと件数バッジ ---
+function setBadge(el, n) { el.textContent = String(n); el.hidden = !(n > 0); }
+function renderTabbar() {
+  document.querySelectorAll('#tabbar .tab').forEach((b) => {
+    if (b.dataset.tab === state.tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  const pending = core.countPending(state.data.foods);
+  setBadge(document.querySelector('#tabbar .tab[data-tab="foods"] .badge'), pending);
+  document.querySelector('#tabbar .tab[data-tab="foods"]').setAttribute('aria-label', pending ? 'マイ食品(PFC未登録 ' + pending + '件)' : 'マイ食品');
+  const shop = shoppingBadgeCount();
+  setBadge(document.querySelector('#tabbar .tab[data-tab="shopping"] .badge'), shop);
+  document.querySelector('#tabbar .tab[data-tab="shopping"]').setAttribute('aria-label', shop ? '買い物(未チェック ' + shop + '件)' : '買い物');
 }
 function renderSettingsInfo() {
   const onboarding = !state.data.settings.targets;
@@ -1541,11 +2769,20 @@ function updateTargetKcal() {
   $('target-kcal').textContent = core.fmtInt(core.calcKcal(v.p, v.f, v.c));
   $('btn-targets-save').disabled = v.invalid || (v.p + v.f + v.c <= 0);
 }
+// 画面の切り替え。name はタブ名か 'settings'。タブを開いたら「最後に開いていたタブ」として覚える(設定の「戻る」先)
 function showView(name) {
+  if (VIEWS.indexOf(name) < 0) name = 'home';
   state.view = name;
+  if (name !== 'settings') state.tab = name;
   if (name === 'settings') fillSettingsForm();
   render();
   window.scrollTo(0, 0);
+  scheduleAutoUpdate(); // タブの切り替えは入力の切れ目。待っている新しい版があれば反映する
+}
+// マイ食品タブを、指定の切替(foods / sets / pending)で開く
+function showFoodsTab(seg) {
+  state.foodsSeg = seg;
+  showView('foods');
 }
 
 // ---------- トースト(元に戻す) ----------
@@ -1557,14 +2794,33 @@ function toast(msg, undoFn) {
   $('toast').hidden = false;
   state.toastTimer = setTimeout(hideToast, TOAST_MS);
 }
-function hideToast() { clearTimeout(state.toastTimer); state.toastTimer = null; state.undoAction = null; $('toast').hidden = true; }
+function hideToast() {
+  const hadUndo = !!state.undoAction;
+  clearTimeout(state.toastTimer); state.toastTimer = null; state.undoAction = null; $('toast').hidden = true;
+  if (hadUndo) scheduleAutoUpdate(); // 「元に戻す」を出している間は自動更新を待っていた
+}
 
 // ---------- シートの開閉 ----------
-const SHEETS = ['sheet-entry', 'sheet-food', 'sheet-amount', 'sheet-set', 'sheet-food-picker', 'sheet-set-add'];
+const SHEETS = ['sheet-entry', 'sheet-food', 'sheet-amount', 'sheet-set', 'sheet-food-picker', 'sheet-set-add', 'sheet-bought', 'sheet-shop-item', 'sheet-price', 'sheet-stores'];
+// シートを閉じたときの後始末(閉じ方はボタン・背景のタップのどちらでも)
+const SHEET_CLOSED = {
+  // 買ったシートをキャンセルで閉じたら、行のチェックを元に戻して見せる
+  'sheet-bought': () => { state.boughtRowId = null; renderShopping(); },
+  'sheet-shop-item': () => { state.shopItemRowId = null; },
+  'sheet-price': () => { state.editingPriceId = null; }
+};
 function anySheetOpen() { return SHEETS.some((id) => !$(id).hidden); }
 // シートを開くときは表示中のトースト(「元に戻す」付きなど)を消す。開いている記録を「元に戻す」で消してしまう、といった食い違いを防ぐ
 function openSheet(id) { hideToast(); $(id).hidden = false; document.body.classList.add('lock'); syncViewport(); }
-function closeSheet(id) { $(id).hidden = true; if (!anySheetOpen()) document.body.classList.remove('lock'); }
+function closeSheet(id) {
+  const sheet = $(id);
+  // 閉じるシートの中の入力欄にフォーカスが残っていたら外す(自動更新の「入力中」判定に残らないように)
+  if (document.activeElement && sheet.contains(document.activeElement)) { try { document.activeElement.blur(); } catch (e) { /* 無視 */ } }
+  const wasOpen = !sheet.hidden;
+  sheet.hidden = true;
+  if (wasOpen && SHEET_CLOSED[id]) SHEET_CLOSED[id]();
+  if (!anySheetOpen()) { document.body.classList.remove('lock'); scheduleAutoUpdate(); } // 入力中で待たせていた更新があれば、ここで反映する
+}
 function focusLater(el) { setTimeout(() => { try { el.focus({ preventScroll: false }); } catch (e) { el.focus(); } }, 50); }
 // iOS のキーボード表示で visualViewport が縮む → シートの高さをそれに合わせる
 function syncViewport() {
@@ -1594,10 +2850,12 @@ function updateEntryForm() {
   const empty = !v.name && v.p === 0 && v.f === 0 && v.c === 0;
   $('btn-entry-save').disabled = v.invalid || empty;
 }
-// entry: 編集対象(null なら追加)。dayKey: その記録が入っている日(追加時は省略 → 表示中の日)
-function openEntrySheet(entry, dayKey) {
+// entry: 編集対象(null なら追加)。dayKey: 編集時はその記録が入っている日、追加時は保存先の日(省略 → 記録タブで表示中の日)。
+// fromHome: ホームの入力エリアから開いた(保存先は今日。保存しても記録タブの表示日は動かさない)
+function openEntrySheet(entry, dayKey, fromHome) {
   if (!entry) catchUpDay(); // 日付が変わっていれば「今日」を追従させてから保存先を決める
-  state.sheetDateKey = (entry && dayKey) || state.dateKey;
+  state.sheetFromHome = !entry && !!fromHome;
+  state.sheetDateKey = (state.sheetFromHome ? today() : dayKey) || state.dateKey;
   const key = state.sheetDateKey;
   state.editingEntryId = entry ? entry.id : null;
   $('sheet-entry-title').textContent = entry ? '記録を編集' : '記録を追加';
@@ -1628,8 +2886,9 @@ function saveEntry() {
     day.entries.push({ id: core.genId('e'), name: v.name, p: v.p, f: v.f, c: v.c, time, createdAt: core.localIso(new Date()) });
   }
   closeSheet('sheet-entry');
-  // 表示中の日と違う日に保存した(開いている間に日付が変わった)ときは、保存した日を見せて消えたように見せない
-  if (key !== state.dateKey) { state.dateKey = key; state.followToday = false; }
+  // 表示中の日と違う日に保存した(開いている間に日付が変わった)ときは、保存した日を見せて消えたように見せない。
+  // ホームから今日に入れたときは記録タブの表示日を動かさない
+  if (key !== state.dateKey && !state.sheetFromHome) { state.dateKey = key; state.followToday = false; }
   commit();
 }
 function deleteEntry() {
@@ -1652,8 +2911,9 @@ function deleteEntry() {
   });
 }
 // 記録をまとめて dayKey の日(省略時は表示中の日)に追加(最近の記録 / 分量シート / セットから)。time 省略時はその日の既定時刻。
-// 1 品ごとに別の記録になる。トーストの「元に戻す」は今回追加した記録をまとめて取り消す
-function addEntries(items, label, dayKey, time) {
+// 1 品ごとに別の記録になる。トーストの「元に戻す」は今回追加した記録をまとめて取り消す。
+// fromHome: ホームの入力エリアから追加した(記録タブの表示日は動かさない)
+function addEntries(items, label, dayKey, time, fromHome) {
   const key = dayKey || state.dateKey;
   const t = core.isValidTime(time) ? time : defaultTimeFor(key);
   const createdAt = core.localIso(new Date());
@@ -1665,7 +2925,7 @@ function addEntries(items, label, dayKey, time) {
   const day = ensureDay(key);
   added.forEach((e) => day.entries.push(e));
   // 表示中の日と違う日に追加した(シートを開いている間に日付が変わった)ときは、追加した日を見せる
-  if (key !== state.dateKey) { state.dateKey = key; state.followToday = false; }
+  if (key !== state.dateKey && !fromHome) { state.dateKey = key; state.followToday = false; }
   if (!commit()) return; // 保存できなかった(警告バー表示中)ときは成功のトーストを出さない
   const gen = state.generation;
   const ids = new Set(added.map((e) => e.id));
@@ -1676,7 +2936,9 @@ function addEntries(items, label, dayKey, time) {
     if (commit()) toast('元に戻しました');
   });
 }
-function addQuickEntry(item, label, dayKey, time) { addEntries([item], label, dayKey, time); }
+function addQuickEntry(item, label, dayKey, time, fromHome) { addEntries([item], label, dayKey, time, fromHome); }
+// クイック追加の追加先: ホームからなら今日、記録タブからなら表示中の日(どちらも 0 時を過ぎていたら先に追従させる)
+function quickTargetDay(fromHome) { catchUpDay(); return fromHome ? today() : state.dateKey; }
 
 // ---------- マイ食品シート ----------
 function foodFormValues() {
@@ -1686,28 +2948,50 @@ function foodFormValues() {
   return {
     name: $('food-name').value.trim().slice(0, core.MAX_NAME), basis,
     servingLabel: basis === 'per100g' ? '' : ($('food-serving-label').value.trim().slice(0, 20) || '1食'),
+    priceBasis: $('food-price-basis-100g').checked ? 'per100g' : 'perItem',
     p: core.clampG(p || 0), f: core.clampG(f || 0), c: core.clampG(c || 0), invalid
   };
+}
+// 値段の単位のラジオを選ぶ
+function setPriceBasisRadio(v) {
+  $('food-price-basis-100g').checked = v === 'per100g';
+  $('food-price-basis-item').checked = v !== 'per100g';
+}
+// 基準(100g / 1食分)を切り替えたとき、値段の単位をまだ自分で選んでいなければ既定値(100g → 100gあたり、1食分 → 1個あたり)に合わせる
+function onFoodBasisChange() {
+  if (!state.priceBasisTouched) setPriceBasisRadio(core.defaultPriceBasis($('food-basis-per100g').checked ? 'per100g' : 'perServing'));
+  updateFoodForm();
+}
+// PFC未登録の食品を開いたときは、P/F/C のどれかを入れるまで保存できない(空のまま保存すると 0kcal のふつうの食品になってしまう)
+function pendingPfcBlank() {
+  return state.foodSheetWasPending && !['food-p', 'food-f', 'food-c'].some((id) => $(id).value.trim() !== '');
 }
 function updateFoodForm() {
   const v = foodFormValues();
   $('food-kcal').textContent = core.fmtInt(core.calcKcal(v.p, v.f, v.c));
   $('food-serving-label-field').hidden = v.basis === 'per100g';
-  $('btn-food-save').disabled = v.invalid || !v.name;
+  $('btn-food-save').disabled = v.invalid || !v.name || pendingPfcBlank();
 }
 // food: 編集対象(null なら追加)。prefill: 記録シートから引き継ぐ値。opts.forSet: セットの食品選択シートから開いた(保存したらセットに入れる)
 function openFoodSheet(food, prefill, opts) {
   state.editingFoodId = food ? food.id : null;
   state.foodSheetForSet = !food && !!(opts && opts.forSet);
   const src = food || prefill || {};
-  $('sheet-food-title').textContent = food ? 'マイ食品を編集' : 'マイ食品を追加';
+  const pending = core.isPending(food);
+  state.foodSheetWasPending = pending;
+  $('sheet-food-title').textContent = pending ? 'PFCを入れる' : food ? 'マイ食品を編集' : 'マイ食品を追加';
   $('food-name').value = src.name || '';
   $('food-basis-per100g').checked = src.basis === 'per100g';
   $('food-basis-serving').checked = src.basis !== 'per100g';
   $('food-serving-label').value = food ? (food.servingLabel || '') : '1食';
-  $('food-p').value = src.p !== undefined ? String(src.p) : '';
-  $('food-f').value = src.f !== undefined ? String(src.f) : '';
-  $('food-c').value = src.c !== undefined ? String(src.c) : '';
+  // PFC未登録の食品は 0 のままなので、欄を空にして入れやすくする
+  $('food-p').value = src.p !== undefined && !pending ? String(src.p) : '';
+  $('food-f').value = src.f !== undefined && !pending ? String(src.f) : '';
+  $('food-c').value = src.c !== undefined && !pending ? String(src.c) : '';
+  // 値段がもう入っている品は、基準を切り替えても値段の単位は勝手に変えない(変えると値段を消す確認が出てしまう)
+  state.priceBasisTouched = !!(food && (((food.priceBasis === 'per100g' || food.priceBasis === 'perItem') && food.priceBasis !== core.defaultPriceBasis(food.basis)) ||
+    core.pricesFor(state.data.prices, 'food', food.id).length > 0));
+  setPriceBasisRadio(food ? core.priceBasisOf(food) : core.defaultPriceBasis(src.basis));
   $('btn-food-delete').hidden = !food;
   updateFoodForm();
   openSheet('sheet-food');
@@ -1716,7 +3000,7 @@ function openFoodSheet(food, prefill, opts) {
 function saveFood() {
   const v = foodFormValues();
   if (v.invalid) { toast('数値の入力を確認してください'); return; }
-  if (!v.name) return;
+  if (!v.name || pendingPfcBlank()) return;
   const foods = state.data.foods;
   const isNew = !state.editingFoodId;
   let newId = null;
@@ -1725,7 +3009,12 @@ function saveFood() {
     const f = foods.find((x) => x.id === state.editingFoodId);
     if (!f) { closeSheet('sheet-food'); toast('マイ食品が見つかりませんでした'); render(); return; }
     const basisChanged = f.basis !== v.basis;
-    Object.assign(f, { name: v.name, basis: v.basis, servingLabel: v.servingLabel, p: v.p, f: v.f, c: v.c });
+    // 値段の単位を変えるときは、比べられなくなる値段を消してよいか確かめる(やめたら保存しない)
+    const priceBasisChanged = core.priceBasisOf(f) !== v.priceBasis;
+    if (!confirmPriceBasisChange('food', f.id, core.priceBasisOf(f), v.priceBasis)) return;
+    if (priceBasisChanged) dropItemPrices('food', f.id);
+    Object.assign(f, { name: v.name, basis: v.basis, servingLabel: v.servingLabel, p: v.p, f: v.f, c: v.c, priceBasis: v.priceBasis });
+    delete f.pending; // PFC未登録の食品は、保存した時点でふつうのマイ食品になる(13.4)
     // 基準を変えたら、セットでの量(個数 / グラム数)を新しい基準の初期値(1食分なら 1、100g 基準なら 100)に戻す
     const used = basisChanged ? core.countSetsUsingFood(state.data.sets, f.id) : 0;
     if (used) {
@@ -1735,10 +3024,13 @@ function saveFood() {
     }
   } else {
     newId = core.genId('f');
-    foods.push({ id: newId, name: v.name, basis: v.basis, servingLabel: v.servingLabel, p: v.p, f: v.f, c: v.c, usedAt: null, useCount: 0 });
+    foods.push({ id: newId, name: v.name, basis: v.basis, servingLabel: v.servingLabel, p: v.p, f: v.f, c: v.c, usedAt: null, useCount: 0, priceBasis: v.priceBasis });
   }
+  const wasPending = state.foodSheetWasPending;
+  state.foodSheetWasPending = false;
   closeSheet('sheet-food');
   const saved = commit();
+  if (wasPending && saved) toast(v.name + ' をマイ食品に登録しました');
   // セットの食品選択シートから登録した → そのままセットに入れる(選択シートは閉じてセット編集シートに戻る)
   if (isNew && state.foodSheetForSet && !$('sheet-set').hidden) addFoodToDraft(newId);
   state.foodSheetForSet = false;
@@ -1748,12 +3040,15 @@ function saveFood() {
 function deleteFood() {
   const id = state.editingFoodId;
   if (!id) return;
-  // セットで使っていれば、そのセットからも外れることを確認文に出す(12.1)
+  // セットで使っていれば、そのセットからも外れることを確認文に出す(12.1)。値段・買い物リストの行も消える(13.5)
   const used = core.countSetsUsingFood(state.data.sets, id);
-  if (!window.confirm('このマイ食品を削除しますか？(過去の記録には影響しません)' + (used ? '\n' + used + '個のセットからも外れます。' : ''))) return;
+  const refs = core.itemRefsNote(core.countItemRefs(state.data.prices, state.data.shopping, 'food', id));
+  if (!window.confirm('このマイ食品を削除しますか？(過去の記録には影響しません)' + (used ? '\n' + used + '個のセットからも外れます。' : '') + (refs ? '\n' + refs : ''))) return;
   const i = state.data.foods.findIndex((x) => x.id === id);
   if (i >= 0) state.data.foods.splice(i, 1);
   if (used) state.data.sets = core.removeFoodFromSets(state.data.sets, id); // 空になったセットも残す
+  const r = core.removeItemRefs(state.data.prices, state.data.shopping, 'food', id);
+  state.data.prices = r.prices; state.data.shopping = r.shopping;
   closeSheet('sheet-food');
   commit();
 }
@@ -1772,12 +3067,13 @@ function updateAmountForm() {
   $('amount-kcal').textContent = core.fmtInt(s.kcal);
   $('btn-amount-add').disabled = !(amt > 0);
 }
-function openAmountSheet(foodId) {
+// fromHome: ホームの入力エリアから開いた(追加先は今日)
+function openAmountSheet(foodId, fromHome) {
   const food = state.data.foods.find((x) => x.id === foodId);
   if (!food) { render(); return; }
-  catchUpDay();
-  state.sheetDateKey = state.dateKey; // 追加先の日と時刻はシートを開いた時点で確定(0 時をまたいでも動かさない)
-  state.sheetTime = defaultTimeFor(state.dateKey);
+  state.sheetFromHome = !!fromHome;
+  state.sheetDateKey = quickTargetDay(fromHome); // 追加先の日と時刻はシートを開いた時点で確定(0 時をまたいでも動かさない)
+  state.sheetTime = defaultTimeFor(state.sheetDateKey);
   state.amountFoodId = food.id;
   const d = core.amountDefaults(food);
   $('amount-name').textContent = food.name;
@@ -1807,13 +3103,14 @@ function addFromAmountSheet() {
   food.usedAt = core.localIso(new Date());
   food.useCount = (food.useCount || 0) + 1;
   closeSheet('sheet-amount');
-  addQuickEntry(s, '追加しました', state.sheetDateKey || state.dateKey, state.sheetTime);
+  addQuickEntry(s, '追加しました', state.sheetDateKey || state.dateKey, state.sheetTime, state.sheetFromHome);
 }
 
 // ---------- セット(12章) ----------
 function findSet(id) { return state.data.sets.find((x) => x.id === id) || null; }
 // 品 1 行ぶんの値の文字: 「P20 F1.5 C3 · 106kcal」
-function pfcKcalText(v) { return 'P' + core.fmtG(v.p) + ' F' + core.fmtG(v.f) + ' C' + core.fmtG(v.c) + ' · ' + core.fmtInt(v.kcal) + 'kcal'; }
+// セットの行用: 等幅3列の P/F/C と kcal(HTML)
+function pfcKcalHtml(v) { return pfcColsHtml(v) + '<span class="kc">' + core.fmtInt(v.kcal) + 'kcal</span>'; }
 // 合計欄(.amount-preview の P/F/C と kcal)に値を入れる
 function fillTotals(boxId, kcalId, sum) {
   core.NUTRIENTS.forEach((k) => { $(boxId).querySelector('b[data-n="' + k + '"]').textContent = core.fmtG(sum[k]); });
@@ -1832,7 +3129,7 @@ function amountInputHtml(cls, food, value, label) {
 }
 // 「＋ セットを管理 / 作る」: セット一覧を開く。1 つも無ければそのまま作成シートも開く
 function openSetsManage() {
-  showView('sets');
+  showFoodsTab('sets');
   if (!state.data.sets.length) openSetSheet(null);
 }
 
@@ -1881,7 +3178,7 @@ function updateSetForm() {
     input.classList.toggle('bad', amt === null);
     if (amt === null) bad = true;
     const sc = core.scaleFood(food, amt || 0);
-    row.querySelector('.pfc').textContent = pfcKcalText(sc);
+    row.querySelector('.pfc').innerHTML = pfcKcalHtml(sc);
     vals.push(sc);
   });
   fillTotals('set-total', 'set-total-kcal', core.sumEntries(vals));
@@ -1915,12 +3212,12 @@ function deleteSet() {
 
 // --- マイ食品の選択シート(セット編集シートの上に重ねる) ---
 function openFoodPicker() {
-  const foods = core.sortFoods(state.data.foods);
+  const foods = core.sortFoods(core.activeFoods(state.data.foods)); // PFC未登録はセットに入れられない
   const inSet = new Set(state.setDraft ? state.setDraft.items.map((it) => it.foodId) : []);
   $('food-picker-list').innerHTML = foods.map((f) =>
     '<button type="button" class="pick" data-food-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' をセットに入れる">' +
       '<span class="body"><span class="name">' + esc(f.name) + '</span>' +
-      '<span class="pfc num">' + (inSet.has(f.id) ? '<span class="in-set">入っています</span> · ' : '') + esc(core.basisLabel(f)) + ' P<b class="vp">' + core.fmtG(f.p) + '</b> F<b class="vf">' + core.fmtG(f.f) + '</b> C<b class="vc">' + core.fmtG(f.c) + '</b></span></span>' +
+      '<span class="pfc num">' + pfcColsHtml(f) + '<span class="pfc-note">' + esc(core.basisLabel(f)) + (inSet.has(f.id) ? ' · <span class="in-set">入っています</span>' : '') + '</span></span></span>' +
       '<span class="kcal num">' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + '<small>kcal</small></span>' +
     '</button>').join('');
   $('food-picker-empty').hidden = foods.length > 0;
@@ -1937,11 +3234,12 @@ function addFoodToDraft(foodId) {
 }
 
 // --- セット追加シート(タップ後に中身を確認して記録する) ---
-function openSetAddSheet(setId) {
+// fromHome: ホームの入力エリアから開いた(追加先は今日)
+function openSetAddSheet(setId, fromHome) {
   const set = findSet(setId);
   if (!set) { render(); return; }
-  catchUpDay(); // 0 時を過ぎていたら今日を追従させてから追加先を決める
-  state.sheetDateKey = state.dateKey; // 追加先の日はシートを開いた時点で確定(0 時をまたいでも動かさない)
+  state.sheetFromHome = !!fromHome;
+  state.sheetDateKey = quickTargetDay(fromHome); // 0 時を過ぎていたら今日を追従させてから追加先を決める。開いた時点で確定(0 時をまたいでも動かさない)
   state.setAddId = set.id;
   const vals = core.setItemValues(set, state.data.foods);
   state.setAddFoodIds = vals.map((v) => v.foodId);
@@ -1985,7 +3283,7 @@ function updateSetAddForm() {
     r.row.classList.toggle('off', !r.checked);
     r.input.classList.toggle('bad', r.checked && r.amount === null);
     const sc = core.scaleFood(r.food, r.amount || 0);
-    r.row.querySelector('.pfc').textContent = pfcKcalText(sc);
+    r.row.querySelector('.pfc').innerHTML = pfcKcalHtml(sc);
     if (!r.checked) return;
     if (r.amount === null) bad = true; else picked.push(sc);
   });
@@ -2011,7 +3309,412 @@ function addFromSetSheet() {
   });
   set.usedAt = now; set.useCount = (set.useCount || 0) + 1;
   closeSheet('sheet-set-add');
-  addEntries(items, set.name + '(' + items.length + '品)を追加しました', key, time);
+  addEntries(items, set.name + '(' + items.length + '品)を追加しました', key, time, state.sheetFromHome);
+}
+
+// ---------- 買い物リスト(13.6) ----------
+// 品を作る。食品なら PFC未登録のマイ食品(1食分基準・「1個」。P/F/C はあとで)、食品ではないなら goods
+function createItem(name, kind, priceBasis) {
+  const now = core.localIso(new Date());
+  if (kind === 'goods') {
+    const g = { id: core.genId('g'), name, priceBasis: core.normPriceBasis(priceBasis), createdAt: now };
+    state.data.goods.push(g);
+    return { type: 'goods', id: g.id };
+  }
+  const f = { id: core.genId('f'), name, basis: 'perServing', servingLabel: '1個', p: 0, f: 0, c: 0, usedAt: null, useCount: 0, priceBasis: core.normPriceBasis(priceBasis), pending: true };
+  state.data.foods.push(f);
+  return { type: 'food', id: f.id };
+}
+// 品をリストに入れる。未チェックで入っていれば何もしない。買った行が残っていれば、それを未購入に戻す
+function addToShopping(type, id) {
+  const obj = itemObj(type, id);
+  if (!obj) { render(); return; }
+  const list = state.data.shopping;
+  const same = (r) => r.itemType === type && r.itemId === id;
+  if (list.some((r) => same(r) && !r.checked)) { toast(obj.name + ' はもうリストにあります'); return; }
+  const now = core.localIso(new Date());
+  const done = list.find((r) => same(r) && r.checked);
+  if (done) Object.assign(done, { checked: false, checkedAt: null, addedAt: now });
+  else list.push({ id: core.genId('sh'), itemType: type, itemId: id, qty: '', checked: false, addedAt: now, checkedAt: null });
+  obj.shopCount = (obj.shopCount || 0) + 1; // 「よく買うもの」の並び順
+  if (commit()) toast(obj.name + ' をリストに入れました');
+}
+// 追加欄の「追加」: 同じ名前の品があればそれを、無ければ選んだ種類で新しく作って入れる
+function addFromShopInput() {
+  const name = shopInputValue();
+  if (!name) return;
+  const d = state.data;
+  const hit = core.exactItem(d.foods, d.goods, name);
+  const it = hit || createItem(name, state.shopNewKind, 'perItem');
+  $('shop-input').value = '';
+  state.shopNewKind = 'food'; // 種類の初期値は毎回「食品」
+  addToShopping(it.type, it.id);
+}
+// チェックを外す: 未購入に戻す(値段の記録は残す)
+function uncheckShopRow(row) {
+  row.checked = false; row.checkedAt = null;
+  commit();
+}
+function markBought(row) { row.checked = true; row.checkedAt = core.localIso(new Date()); }
+// 買ったものを片付ける(確認なし)。トーストの「元に戻す」で元の位置に戻す
+function clearBought() {
+  const { kept, removed } = core.clearChecked(state.data.shopping);
+  if (!removed.length) return;
+  state.data.shopping = kept;
+  if (!commit()) return;
+  const gen = state.generation;
+  toast(removed.length + '品を片付けました', () => {
+    if (gen !== state.generation) { toast('元に戻せませんでした'); return; }
+    state.data.shopping = core.restoreRemoved(state.data.shopping, removed);
+    if (commit()) toast('元に戻しました');
+  });
+}
+
+// --- 店と値段の入力(買ったシートと値段シートで共用) ---
+const PRICE_FORMS = {
+  bought: { store: 'bought-store', amount: 'bought-price', amountLabel: 'bought-price-label', grams: 'bought-grams', gramsField: 'bought-grams-field', live: 'bought-per100', newBtn: 'btn-bought-new-store', newBox: 'bought-new-store', newName: 'bought-new-store-name' },
+  price: { store: 'price-store', amount: 'price-amount', amountLabel: 'price-amount-label', grams: 'price-grams', gramsField: 'price-grams-field', live: 'price-per100', newBtn: 'btn-price-new-store', newBox: 'price-new-store', newName: 'price-new-store-name' }
+};
+// 店の選択欄を作り直す(名前順)。selectedId が無ければ「前回選んだ店」。店が 1 つも無ければ新しい店の欄を開く
+function fillStoreSelect(form, selectedId) {
+  const ids = PRICE_FORMS[form];
+  const stores = core.sortStores(state.data.stores);
+  const pick = selectedId && core.findStore(stores, selectedId) ? selectedId : core.lastUsedStoreId(state.data.prices, state.data.stores);
+  $(ids.store).innerHTML = stores.length
+    ? stores.map((st) => '<option value="' + esc(st.id) + '"' + (st.id === pick ? ' selected' : '') + '>' + esc(st.name) + '</option>').join('')
+    : '<option value="">(店がありません)</option>';
+  $(ids.store).disabled = !stores.length;
+  showNewStoreBox(form, !stores.length);
+}
+function showNewStoreBox(form, on) {
+  const ids = PRICE_FORMS[form];
+  $(ids.newBox).hidden = !on;
+  if (on) $(ids.newName).value = '';
+}
+// 同じ名前の店があればそれを、無ければ作って返す(作ったら保存)
+function ensureStore(name) {
+  const old = core.findStoreByName(state.data.stores, name);
+  if (old) return old;
+  const st = { id: core.genId('st'), name, createdAt: core.localIso(new Date()) };
+  state.data.stores.push(st);
+  commit();
+  return st;
+}
+// 「＋ 新しい店」の欄の「作る」: その場で店を作って選ぶ
+function createStoreInline(form, update) {
+  const ids = PRICE_FORMS[form];
+  const name = $(ids.newName).value.trim().slice(0, core.MAX_STORE_NAME);
+  if (!name) { toast('店の名前を入れてください'); focusLater($(ids.newName)); return; }
+  const st = ensureStore(name);
+  fillStoreSelect(form, st.id);
+  update();
+}
+// 金額・グラムの入力欄を値段の単位に合わせる(100gあたり → 金額とグラム、1個あたり → 1個あたりの金額だけ)
+function setPriceFormBasis(form, basis) {
+  const ids = PRICE_FORMS[form];
+  const per100 = basis === 'per100g';
+  $(ids.gramsField).hidden = !per100;
+  $(ids.gramsField).parentElement.classList.toggle('single', !per100);
+  $(ids.amountLabel).textContent = per100 ? '金額(円)' : '1個あたりの金額(円)';
+}
+// 入力欄を読む。ok は保存できるか(店があり、金額が 0 以上の整数、100gあたりならグラムが 0 より大きい)
+function readPriceForm(form, basis) {
+  const ids = PRICE_FORMS[form];
+  const a = $(ids.amount), g = $(ids.grams);
+  const price = a.validity && a.validity.badInput ? null : core.parsePrice(a.value);
+  const grams = basis === 'per100g' ? (g.validity && g.validity.badInput ? null : core.parseGrams(g.value)) : null;
+  const storeId = $(ids.store).disabled && !$(ids.store).value ? '' : $(ids.store).value;
+  const ok = !!core.findStore(state.data.stores, storeId) && price !== null && (basis !== 'per100g' || grams !== null);
+  return { storeId, price, grams, ok };
+}
+// 100gあたりのライブ表示(「¥350 / 200g → 100gあたり ¥175」)
+function showPriceLive(form, basis, v) {
+  const ids = PRICE_FORMS[form];
+  const filled = (id) => { const el = $(id); return !!(el.value.trim() || (el.validity && el.validity.badInput)); };
+  // 入れてあるのに使えない値(上限超え・マイナスなど)は、何が悪いかを出す(保存は押せないので)
+  let text = '';
+  if (v.price === null && filled(ids.amount)) text = '金額は 0〜' + core.fmtInt(core.MAX_PRICE) + ' 円の整数で入れてください';
+  else if (basis === 'per100g' && v.grams === null && filled(ids.grams)) text = 'グラムは 0 より大きい数で入れてください';
+  else text = core.priceInputText(v.price, v.grams, basis);
+  $(ids.live).textContent = text || (basis === 'per100g' ? '金額とグラムを入れると、100gあたりの値段を出します' : '');
+}
+
+// --- 買ったシート ---
+function openBoughtSheet(row) {
+  const it = itemInfo(row.itemType, row.itemId);
+  if (!it) { render(); return; }
+  state.boughtRowId = row.id;
+  $('bought-title').textContent = it.name + ' を買った';
+  $('bought-unit').textContent = '値段は' + core.priceBasisLabel(it.priceBasis) + 'で比べます(値段タブ)';
+  $('bought-pending-note').hidden = !it.pending;
+  $('bought-price').value = ''; $('bought-grams').value = '';
+  setPriceFormBasis('bought', it.priceBasis);
+  fillStoreSelect('bought');
+  updateBoughtForm();
+  openSheet('sheet-bought');
+}
+function boughtItem() { const row = findShopRow(state.boughtRowId); return row ? { row, it: itemInfo(row.itemType, row.itemId) } : null; }
+function updateBoughtForm() {
+  const b = boughtItem();
+  if (!b || !b.it) return;
+  const basis = b.it.priceBasis;
+  const v = readPriceForm('bought', basis);
+  showPriceLive('bought', basis, v);
+  // 選んだ店の前回の値段を、入力欄の薄い文字で見せる(そのまま保存はしない)
+  const old = v.storeId ? core.findPrice(state.data.prices, b.row.itemType, b.row.itemId, v.storeId) : null;
+  $('bought-price').placeholder = old ? '前回 ' + core.fmtInt(old.price) : '例 350'; // グラムと同じく 3 桁区切り
+  $('bought-grams').placeholder = old && old.grams ? '前回 ' + core.fmtG(old.grams) : '例 200';
+  $('btn-bought-save').disabled = !v.ok;
+}
+// 「保存」: その品 × 店の値段を上書きして、行を買った状態にする
+function saveBought() {
+  const b = boughtItem();
+  if (!b || !b.it) { closeSheet('sheet-bought'); render(); return; }
+  const v = readPriceForm('bought', b.it.priceBasis);
+  if (!v.ok) return;
+  const res = core.upsertPrice(state.data.prices, { itemType: b.row.itemType, itemId: b.row.itemId, storeId: v.storeId, price: v.price, grams: v.grams, basis: b.it.priceBasis }, core.localIso(new Date()));
+  state.data.prices = res.prices;
+  markBought(b.row);
+  closeSheet('sheet-bought');
+  if (commit()) toast(storeName(v.storeId) + ' ' + core.priceLabel(res.price, b.it.priceBasis) + ' を保存しました');
+}
+// 「値段は入れない」: チェックだけ付ける
+function skipBought() {
+  const b = boughtItem();
+  if (b) markBought(b.row);
+  closeSheet('sheet-bought');
+  commit();
+}
+
+// --- 品のシート(数量メモ・値段の単位・リストから外す・食品ではない品の名前と削除) ---
+function openShopItemSheet(row, focusQty) {
+  const it = itemInfo(row.itemType, row.itemId);
+  if (!it) { render(); return; }
+  state.shopItemRowId = row.id;
+  const goods = it.type === 'goods';
+  $('shop-item-title').textContent = it.name;
+  $('shop-item-kind').textContent = goods ? '食品ではない品' : it.pending ? 'PFC未登録の食品。マイ食品タブの「PFC未登録」から P/F/C を入れられます' : 'マイ食品。名前や P/F/C はマイ食品タブで直せます';
+  $('shop-item-name-field').hidden = !goods;
+  $('shop-item-name').value = it.name;
+  $('shop-item-qty').value = row.qty || '';
+  $('shop-item-basis-100g').checked = it.priceBasis === 'per100g';
+  $('shop-item-basis-item').checked = it.priceBasis !== 'per100g';
+  $('btn-shop-item-delete').hidden = !goods;
+  updateShopItemForm();
+  openSheet('sheet-shop-item');
+  if (focusQty) focusLater($('shop-item-qty'));
+}
+function updateShopItemForm() {
+  const row = findShopRow(state.shopItemRowId);
+  $('btn-shop-item-save').disabled = !row || (row.itemType === 'goods' && !$('shop-item-name').value.trim());
+}
+// 値段の単位を変えると、その品の登録済みの値段は比べられなくなるので消す(確認する)。やめたら false
+function confirmPriceBasisChange(type, id, from, to) {
+  if (from === to) return true;
+  const n = core.pricesFor(state.data.prices, type, id).length;
+  if (!n) return true;
+  return window.confirm('値段の単位を変えると、この品の値段 ' + n + ' 件は比べられなくなるため消えます。よろしいですか？');
+}
+function dropItemPrices(type, id) { state.data.prices = core.removeItemRefs(state.data.prices, [], type, id).prices; }
+function saveShopItem() {
+  const row = findShopRow(state.shopItemRowId);
+  const obj = row && itemObj(row.itemType, row.itemId);
+  if (!row || !obj) { closeSheet('sheet-shop-item'); render(); return; }
+  const basis = $('shop-item-basis-100g').checked ? 'per100g' : 'perItem';
+  const from = row.itemType === 'food' ? core.priceBasisOf(obj) : core.normPriceBasis(obj.priceBasis);
+  if (!confirmPriceBasisChange(row.itemType, row.itemId, from, basis)) return;
+  if (row.itemType === 'goods') {
+    const name = $('shop-item-name').value.trim().slice(0, core.MAX_NAME);
+    if (!name) return;
+    obj.name = name;
+  }
+  if (from !== basis) dropItemPrices(row.itemType, row.itemId);
+  obj.priceBasis = basis;
+  row.qty = $('shop-item-qty').value.trim().slice(0, core.MAX_QTY);
+  closeSheet('sheet-shop-item');
+  commit();
+}
+// リストから外す(品そのものと値段は残す)。トーストで元に戻せる
+function removeShopRow() {
+  const row = findShopRow(state.shopItemRowId);
+  closeSheet('sheet-shop-item');
+  if (!row) { render(); return; }
+  const idx = state.data.shopping.indexOf(row);
+  state.data.shopping.splice(idx, 1);
+  if (!commit()) return;
+  const gen = state.generation;
+  const it = itemInfo(row.itemType, row.itemId);
+  toast((it ? it.name + ' を' : '') + 'リストから外しました', () => {
+    if (gen !== state.generation) { toast('元に戻せませんでした'); return; }
+    state.data.shopping = core.restoreRemoved(state.data.shopping, [{ index: idx, row }]);
+    if (commit()) toast('元に戻しました');
+  });
+}
+// 食品ではない品を削除: その品の値段と買い物リストの行も消す(13.5)
+function deleteGoods() {
+  const row = findShopRow(state.shopItemRowId);
+  const g = row && row.itemType === 'goods' ? itemObj('goods', row.itemId) : null;
+  if (!g) return;
+  const note = core.itemRefsNote(core.countItemRefs(state.data.prices, state.data.shopping, 'goods', g.id));
+  if (!window.confirm('「' + g.name + '」を削除しますか？' + (note ? '\n' + note : ''))) return;
+  state.data.goods = state.data.goods.filter((x) => x.id !== g.id);
+  const r = core.removeItemRefs(state.data.prices, state.data.shopping, 'goods', g.id);
+  state.data.prices = r.prices; state.data.shopping = r.shopping;
+  closeSheet('sheet-shop-item');
+  commit();
+}
+
+// ---------- 値段タブ(13.7) ----------
+function findPriceById(id) { return state.data.prices.find((p) => p.id === id) || null; }
+// 品の選択欄: マイ食品(PFC未登録を含む)/ 食品ではない品 / 新しい品
+function priceItemOptionsHtml() {
+  const d = state.data;
+  const opt = (it) => '<option value="' + it.type + ':' + esc(it.id) + '">' + esc(it.name + (it.pending ? '(PFC未登録)' : '')) + '</option>';
+  const foods = core.allItems(d.foods, []), goods = core.allItems([], d.goods);
+  return '<option value="">品を選んでください</option>' +
+    (foods.length ? '<optgroup label="マイ食品">' + foods.map(opt).join('') + '</optgroup>' : '') +
+    (goods.length ? '<optgroup label="食品ではない">' + goods.map(opt).join('') + '</optgroup>' : '') +
+    '<option value="__new">＋ 新しい品を入れる</option>';
+}
+// pr: 編集する値段(null なら追加)
+function openPriceSheet(pr) {
+  state.editingPriceId = pr ? pr.id : null;
+  state.priceNewKind = 'food';
+  const it = pr ? itemInfo(pr.itemType, pr.itemId) : null;
+  if (pr && !it) { render(); return; }
+  $('sheet-price-title').textContent = pr ? '値段を直す' : '値段を追加';
+  if (pr) {
+    $('price-item').innerHTML = '<option value="' + pr.itemType + ':' + esc(pr.itemId) + '">' + esc(it.name) + '</option>';
+  } else {
+    $('price-item').innerHTML = priceItemOptionsHtml();
+    $('price-item').value = '';
+  }
+  $('price-item').disabled = !!pr;
+  fillStoreSelect('price', pr ? pr.storeId : null);
+  $('price-store').disabled = !!pr || !state.data.stores.length; // 編集では品と店は変えない(値段だけ書き直す)
+  $('btn-price-new-store').hidden = !!pr;
+  $('price-new-name').value = '';
+  $('price-new-basis-item').checked = true;
+  setKindSeg($('price-new-kind'), 'food');
+  $('price-amount').value = pr ? String(pr.price) : '';
+  $('price-grams').value = pr && pr.grams ? String(pr.grams) : '';
+  $('btn-price-delete').hidden = !pr;
+  updatePriceSheet();
+  openSheet('sheet-price');
+}
+// 値段シートで選んでいる品。既存の品は { info }、新しい品は { isNew, name, type, basis, dup }、未選択は null
+function priceSheetItem() {
+  const v = $('price-item').value;
+  if (v === '__new') {
+    const name = $('price-new-name').value.trim().slice(0, core.MAX_NAME);
+    return { isNew: true, name, type: state.priceNewKind, basis: $('price-new-basis-100g').checked ? 'per100g' : 'perItem', dup: core.exactItem(state.data.foods, state.data.goods, name) };
+  }
+  const i = v.indexOf(':');
+  if (i < 0) return null;
+  const info = itemInfo(v.slice(0, i), v.slice(i + 1));
+  return info ? { info } : null;
+}
+function updatePriceSheet() {
+  const sel = priceSheetItem();
+  const editing = !!state.editingPriceId;
+  $('price-new').hidden = editing || !(sel && sel.isNew);
+  setKindSeg($('price-new-kind'), state.priceNewKind);
+  const basis = sel ? (sel.info ? sel.info.priceBasis : sel.basis) : 'perItem';
+  setPriceFormBasis('price', basis);
+  let unit = '';
+  if (sel && sel.info) unit = 'この品は' + core.priceBasisLabel(basis) + 'で比べます' + (sel.info.type === 'food' ? '(単位はマイ食品の編集で変えられます)' : '(単位は買い物リストの品の詳細で変えられます)');
+  if (sel && sel.isNew && sel.dup) unit = '同じ名前の品「' + sel.dup.name + '」があります。上の一覧から選んでください';
+  $('price-item-unit').textContent = unit;
+  $('price-item-unit').hidden = !unit;
+  const v = readPriceForm('price', basis);
+  showPriceLive('price', basis, v);
+  $('price-overwrite-note').hidden = editing || !(sel && sel.info && v.storeId && core.findPrice(state.data.prices, sel.info.type, sel.info.id, v.storeId));
+  $('btn-price-save').disabled = !v.ok || !sel || (sel.isNew && (!sel.name || !!sel.dup));
+}
+function savePriceSheet() {
+  updatePriceSheet();
+  if ($('btn-price-save').disabled) return;
+  const now = core.localIso(new Date());
+  if (state.editingPriceId) {
+    const pr = findPriceById(state.editingPriceId);
+    const it = pr && itemInfo(pr.itemType, pr.itemId);
+    if (!pr || !it) { closeSheet('sheet-price'); toast('値段が見つかりませんでした'); render(); return; }
+    const v = readPriceForm('price', it.priceBasis);
+    state.data.prices = core.upsertPrice(state.data.prices, { itemType: pr.itemType, itemId: pr.itemId, storeId: pr.storeId, price: v.price, grams: v.grams, basis: it.priceBasis }, now).prices;
+    closeSheet('sheet-price');
+    if (commit()) toast('値段を直しました');
+    return;
+  }
+  const sel = priceSheetItem();
+  const basis = sel.info ? sel.info.priceBasis : sel.basis;
+  const v = readPriceForm('price', basis);
+  const item = sel.info ? { type: sel.info.type, id: sel.info.id } : createItem(sel.name, sel.type, sel.basis);
+  state.data.prices = core.upsertPrice(state.data.prices, { itemType: item.type, itemId: item.id, storeId: v.storeId, price: v.price, grams: v.grams, basis }, now).prices;
+  // 追加した品のカードが見えるように、検索を消してそのカードを開く
+  state.priceQuery = ''; $('price-search').value = '';
+  state.priceOpen.add(priceKey(item.type, item.id));
+  closeSheet('sheet-price');
+  if (commit()) toast('値段を保存しました');
+}
+function deletePriceSheet() {
+  const pr = findPriceById(state.editingPriceId);
+  if (!pr) return;
+  if (!window.confirm('「' + storeName(pr.storeId) + '」の値段を削除しますか？')) return;
+  state.data.prices = state.data.prices.filter((p) => p.id !== pr.id);
+  closeSheet('sheet-price');
+  commit();
+}
+
+// --- 店の管理シート ---
+function openStoresSheet() {
+  $('store-new-name').value = '';
+  renderStoreList();
+  updateStoreAdd();
+  openSheet('sheet-stores');
+}
+function renderStoreList() {
+  const stores = core.sortStores(state.data.stores);
+  $('store-list').innerHTML = stores.map((st) =>
+    '<div class="store" data-id="' + esc(st.id) + '">' +
+      '<input class="store-name" type="text" maxlength="' + core.MAX_STORE_NAME + '" autocomplete="off" value="' + esc(st.name) + '" aria-label="店の名前(' + esc(st.name) + ')">' +
+      '<span class="store-count num">値段 ' + core.countStorePrices(state.data.prices, st.id) + '件</span>' +
+      '<button type="button" class="store-delete" aria-label="' + esc(st.name) + ' を削除">削除</button>' +
+    '</div>').join('');
+  $('store-empty').hidden = stores.length > 0;
+}
+function updateStoreAdd() { $('btn-store-add').disabled = !$('store-new-name').value.trim(); }
+function addStore() {
+  const name = $('store-new-name').value.trim().slice(0, core.MAX_STORE_NAME);
+  if (!name) return;
+  if (core.findStoreByName(state.data.stores, name)) { toast('同じ名前の店があります'); return; }
+  state.data.stores.push({ id: core.genId('st'), name, createdAt: core.localIso(new Date()) });
+  $('store-new-name').value = '';
+  commit();
+  renderStoreList(); updateStoreAdd();
+}
+// 名前の変更(欄を直して確定したとき)。空や同じ名前の店があれば元に戻す
+function renameStore(id, input) {
+  const st = core.findStore(state.data.stores, id);
+  if (!st) { renderStoreList(); return; }
+  const name = input.value.trim().slice(0, core.MAX_STORE_NAME);
+  if (!name) { input.value = st.name; toast('店の名前を入れてください'); return; }
+  const dup = core.findStoreByName(state.data.stores, name);
+  if (dup && dup.id !== id) { input.value = st.name; toast('同じ名前の店があります'); return; }
+  if (name === st.name) { input.value = name; return; }
+  st.name = name;
+  if (commit()) toast('店の名前を「' + name + '」にしました');
+  renderStoreList();
+}
+// 店の削除: その店の値段も消える(確認する)
+function deleteStore(id) {
+  const st = core.findStore(state.data.stores, id);
+  if (!st) { renderStoreList(); return; }
+  const n = core.countStorePrices(state.data.prices, id);
+  if (!window.confirm('「' + st.name + '」を削除しますか？\nこの店の値段 ' + n + ' 件も消えます。')) return;
+  const r = core.removeStore(state.data.stores, state.data.prices, id);
+  state.data.stores = r.stores; state.data.prices = r.prices;
+  commit();
+  renderStoreList();
 }
 
 // ---------- 設定: 目標 ----------
@@ -2032,7 +3735,7 @@ function saveTargets() {
   Object.keys(state.data.days).forEach((key) => { if (key >= t) state.data.days[key].targets = Object.assign({}, vals); });
   const saved = save(); // 失敗時は警告バーが出る(成功のトーストは出さない)
   if (saved) toast(wasOnboarding ? '目標を保存しました' : '目標を保存しました(今日以降に適用)');
-  if (wasOnboarding) { state.followToday = true; showView('main'); } else render();
+  if (wasOnboarding) { state.followToday = true; showView('home'); } else render();
 }
 
 // ---------- 設定: バックアップ ----------
@@ -2074,7 +3777,9 @@ function importFromText(text, sourceLabel) {
   try { obj = JSON.parse(String(text)); } catch (e) { toast(sourceLabel + ': JSON として読めませんでした'); return false; }
   const v = core.validateImport(obj);
   if (!v.ok) { toast(sourceLabel + ': 読み込めません(' + v.reason + ')'); return false; }
-  const msg = '現在のデータを上書きします。\n読み込む内容: 記録 ' + v.stats.entries + ' 件 / マイ食品 ' + v.stats.foods + ' 件 / セット ' + v.stats.sets + ' 件\nよろしいですか？';
+  const d = v.data;
+  const msg = '現在のデータを上書きします。\n読み込む内容: 記録 ' + v.stats.entries + ' 件 / マイ食品 ' + v.stats.foods + ' 件 / セット ' + v.stats.sets + ' 件\n' +
+    '店 ' + d.stores.length + ' 件 / 値段 ' + d.prices.length + ' 件 / 買い物リスト ' + d.shopping.length + ' 件\nよろしいですか？';
   if (!window.confirm(msg)) return false;
   const prev = state.data;
   state.data = v.data;
@@ -2090,7 +3795,7 @@ function importFromText(text, sourceLabel) {
   state.followToday = true;
   state.dateKey = today();
   // 目標が入っていればメイン画面で復元結果を見せる。なければ初回案内へ
-  showView(state.data.settings.targets ? 'main' : 'settings');
+  showView(state.data.settings.targets ? 'home' : 'settings');
   toast('読み込みました');
   return true;
 }
@@ -2137,31 +3842,80 @@ function wipeAll() {
   toast('全データを削除しました');
 }
 
-// ---------- Service Worker ----------
+// ---------- Service Worker・自動更新(13.8) ----------
+const UPDATE_CHECK_MS = 5 * 60 * 1000; // 前回の確認から 5 分以内なら確認しない
+const UPDATED_KEY = 'pfc.updated';     // 更新でリロードする直前に sessionStorage に付ける印(リロード後に 1 回だけトーストを出す)
 let swRegistration = null;
-let updateRequested = false; // 「更新」を押した(=切り替わったらリロードしてよい)
+let updateRequested = false; // 更新を反映すると決めた(=切り替わったらリロードしてよい)
+let waitingReg = null;       // 新しい版が待機中の registration(入力中で反映を待たせている間も持っておく)
+let lastUpdateCheck = 0;     // 最後に registration.update() を呼んだ時刻
+let autoUpdateTimer = null;
 function applyUpdate(reg) {
   if (!reg || !reg.waiting) return;
   updateRequested = true;
+  try { sessionStorage.setItem(UPDATED_KEY, '1'); } catch (e) { /* 印を付けられなくても更新は続ける */ }
   setUpdateBar(false);
   reg.waiting.postMessage('SKIP_WAITING');
+}
+// 入力中か(シートが開いている / 入力欄にフォーカスがある / 「元に戻す」を出している / 読み込み用のテキストや買うものの打ちかけがある)。
+// 入力中はリロードで入力や取り消しの機会を失わせないよう、自動更新を待つ
+function isUserBusy() {
+  if (anySheetOpen()) return true;
+  const el = document.activeElement;
+  if (el && el !== document.body && (el.matches('input, textarea, select') || el.isContentEditable)) return true;
+  if (state.undoAction) return true;
+  if ($('paste-area').value.trim()) return true;
+  if ($('shop-input').value.trim()) return true; // 買い物の追加欄に打ちかけの文字がある
+  return false;
+}
+// 新しい版が待機中になった: 更新バーを出し、入力中でなければそのまま反映する
+function onUpdateWaiting(reg) {
+  waitingReg = reg;
+  setUpdateBar(true);
+  scheduleAutoUpdate();
+}
+// 待機中の新しい版があり、入力中でなければ SKIP_WAITING → controllerchange でリロード
+function tryAutoUpdate() {
+  const reg = waitingReg;
+  if (!reg || !reg.waiting || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+  if (isUserBusy()) return;
+  applyUpdate(reg);
+}
+// 操作の直後(シートを閉じた・トーストが消えた・タブを切り替えた)に呼ぶ。フォーカスの移動などが落ち着いてから判定する
+function scheduleAutoUpdate() {
+  if (!waitingReg) return;
+  clearTimeout(autoUpdateTimer);
+  autoUpdateTimer = setTimeout(tryAutoUpdate, 60);
+}
+// 起動時と前面に戻ったときに新しい版を確認する(5 分以内の再確認はしない)
+function checkForUpdateQuietly() {
+  if (!swRegistration || !core.updateCheckDue(lastUpdateCheck, Date.now(), UPDATE_CHECK_MS)) return;
+  lastUpdateCheck = Date.now();
+  try { const p = swRegistration.update(); if (p && p.catch) p.catch(() => { /* 圏外などは無視 */ }); } catch (e) { /* 無視 */ }
+}
+// 更新でリロードした直後なら、1 回だけ「新しいバージョンになりました」を出す
+function showUpdatedToast() {
+  let flag = null;
+  try { flag = sessionStorage.getItem(UPDATED_KEY); sessionStorage.removeItem(UPDATED_KEY); } catch (e) { /* 無視 */ }
+  if (flag) toast('新しいバージョン(' + core.APP_VERSION + ')になりました');
 }
 function registerSW() {
   const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   if (!('serviceWorker' in navigator) || !(location.protocol === 'https:' || local)) return;
   let refreshing = false;
-  // 初回インストール時(clients.claim)にもこのイベントは来るので、ユーザーが「更新」を押したときだけリロードする
+  // 初回インストール時(clients.claim)にもこのイベントは来るので、更新を反映すると決めたときだけリロードする
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (!updateRequested || refreshing) return; refreshing = true; location.reload(); });
   navigator.serviceWorker.register('./sw.js').then((reg) => {
     swRegistration = reg;
-    if (reg.waiting && navigator.serviceWorker.controller) setUpdateBar(true);
+    if (reg.waiting && navigator.serviceWorker.controller) onUpdateWaiting(reg);
     reg.addEventListener('updatefound', () => {
       const nw = reg.installing;
       if (!nw) return;
       nw.addEventListener('statechange', () => {
-        if (nw.state === 'installed' && navigator.serviceWorker.controller) setUpdateBar(true);
+        if (nw.state === 'installed' && navigator.serviceWorker.controller) onUpdateWaiting(reg);
       });
     });
+    checkForUpdateQuietly(); // 起動時の確認
   }).catch(() => { /* 登録失敗は無視(オフラインでも動く) */ });
 }
 async function checkUpdate() {
@@ -2169,6 +3923,7 @@ async function checkUpdate() {
   try {
     const reg = swRegistration || await navigator.serviceWorker.getRegistration();
     if (!reg) { toast('最新です'); return; }
+    lastUpdateCheck = Date.now();
     await reg.update();
     if (reg.waiting) { applyUpdate(reg); return; }
     if (reg.installing) {
@@ -2190,31 +3945,52 @@ function bindEvents() {
   $('btn-prev-day').addEventListener('click', () => { state.dateKey = core.addDays(state.dateKey, -1); state.followToday = false; render(); });
   $('btn-next-day').addEventListener('click', () => { const t = today(); if (state.dateKey >= t) return; state.dateKey = core.addDays(state.dateKey, 1); state.followToday = state.dateKey === t; render(); });
   $('date-label').addEventListener('click', () => { state.followToday = true; render(); });
-  $('btn-settings').addEventListener('click', () => showView('settings'));
+  // 各タブのヘッダ右上の設定(⚙)
+  document.querySelectorAll('.btn-gear').forEach((btn) => btn.addEventListener('click', () => showView('settings')));
   $('backup-banner').addEventListener('click', () => showView('settings'));
   $('btn-load-warning-close').addEventListener('click', () => showAlert('load-warning', false));
 
-  // 7 日ストリップ・チップ・一覧(委譲)
+  // タブバー(もう一度押すと先頭へスクロール)
+  $('tabbar').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.tab[data-tab]'); if (!el) return;
+    showView(el.dataset.tab);
+  });
+
+  // 7 日ストリップ(ホーム): タップで記録タブのその日へ
   $('week-strip').addEventListener('click', (ev) => {
     const el = ev.target.closest('.day'); if (!el) return;
     const key = el.dataset.date; if (!core.isValidDateKey(key) || key > today()) return;
-    state.dateKey = key; state.followToday = key === today(); render();
+    state.dateKey = key; state.followToday = key === today();
+    showView('record');
   });
-  $('set-chips').addEventListener('click', (ev) => {
-    if (ev.target.closest('#btn-sets-manage')) { openSetsManage(); return; }
-    const el = ev.target.closest('.chip[data-set-id]'); if (el) openSetAddSheet(el.dataset.setId);
+  // 推移グラフの切替(kcal / P / F / C)
+  $('week-chart').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.chart-mode[data-mode]'); if (!el) return;
+    state.chartMode = el.dataset.mode;
+    renderWeekChart(today());
   });
-  $('food-chips').addEventListener('click', (ev) => {
-    if (ev.target.closest('#btn-foods-manage')) { showView('foods'); return; }
-    const el = ev.target.closest('.chip[data-food-id]'); if (el) openAmountSheet(el.dataset.foodId);
-  });
-  $('recent-chips').addEventListener('click', (ev) => {
-    const el = ev.target.closest('.chip[data-recent-index]'); if (!el) return;
-    const item = (state.recent || [])[Number(el.dataset.recentIndex)];
-    if (!item) return;
-    catchUpDay(); // 0 時を過ぎていたら今日を追従させてから追加する(昨日に 12:00 で入ってしまうのを防ぐ)
-    addQuickEntry(item, '追加しました', state.dateKey);
-  });
+
+  // クイック追加のチップ列(委譲)。記録タブは表示中の日に、ホームの入力エリアは常に今日に入れる
+  const bindQuickRows = (setRow, foodRow, recentRow, fromHome) => {
+    setRow.addEventListener('click', (ev) => {
+      if (ev.target.closest('.chip.manage')) { openSetsManage(); return; }
+      const el = ev.target.closest('.chip[data-set-id]'); if (el) openSetAddSheet(el.dataset.setId, fromHome);
+    });
+    foodRow.addEventListener('click', (ev) => {
+      if (ev.target.closest('.chip.manage')) { showFoodsTab('foods'); return; }
+      const el = ev.target.closest('.chip[data-food-id]'); if (el) openAmountSheet(el.dataset.foodId, fromHome);
+    });
+    recentRow.addEventListener('click', (ev) => {
+      const el = ev.target.closest('.chip[data-recent-index]'); if (!el) return;
+      const item = (state.recent || [])[Number(el.dataset.recentIndex)];
+      if (!item) return;
+      // 0 時を過ぎていたら今日を追従させてから追加する(昨日に 12:00 で入ってしまうのを防ぐ)
+      addQuickEntry(item, '追加しました', quickTargetDay(fromHome), undefined, fromHome);
+    });
+  };
+  bindQuickRows($('set-chips'), $('food-chips'), $('recent-chips'), false);
+  bindQuickRows($('home-set-chips'), $('home-food-chips'), $('home-recent-chips'), true);
+  $('btn-home-add').addEventListener('click', () => openEntrySheet(null, null, true));
   $('entry-list').addEventListener('click', (ev) => {
     const el = ev.target.closest('.entry[data-id]'); if (!el) return;
     const key = state.dateKey;
@@ -2234,8 +4010,17 @@ function bindEvents() {
     openFoodSheet(null, { name: v.name, basis: 'perServing', p: v.p, f: v.f, c: v.c });
   });
 
-  // マイ食品画面・シート
-  $('btn-foods-back').addEventListener('click', () => showView('main'));
+  // マイ食品タブ(切替・一覧・PFC未登録)・シート
+  $('foods-seg').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.seg[data-seg]'); if (!el) return;
+    state.foodsSeg = el.dataset.seg;
+    renderFoodsTab();
+  });
+  $('pending-list').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.pending[data-id]'); if (!el || !ev.target.closest('.btn-fill-pfc')) return;
+    const f = state.data.foods.find((x) => x.id === el.dataset.id);
+    if (f) openFoodSheet(f); else render();
+  });
   $('btn-food-new').addEventListener('click', () => openFoodSheet(null));
   $('food-list').addEventListener('click', (ev) => {
     const el = ev.target.closest('.food[data-id]'); if (!el) return;
@@ -2243,13 +4028,13 @@ function bindEvents() {
     if (f) openFoodSheet(f); else render();
   });
   ['food-name', 'food-serving-label', 'food-p', 'food-f', 'food-c'].forEach((id) => $(id).addEventListener('input', updateFoodForm));
-  ['food-basis-per100g', 'food-basis-serving'].forEach((id) => $(id).addEventListener('change', updateFoodForm));
+  ['food-basis-per100g', 'food-basis-serving'].forEach((id) => $(id).addEventListener('change', onFoodBasisChange));
+  ['food-price-basis-item', 'food-price-basis-100g'].forEach((id) => $(id).addEventListener('change', () => { state.priceBasisTouched = true; }));
   $('btn-food-save').addEventListener('click', saveFood);
   $('btn-food-cancel').addEventListener('click', () => closeSheet('sheet-food'));
   $('btn-food-delete').addEventListener('click', deleteFood);
 
-  // セット画面・セット編集シート・食品の選択シート
-  $('btn-sets-back').addEventListener('click', () => showView('main'));
+  // セット(マイ食品タブの切替)・セット編集シート・食品の選択シート
   $('btn-set-new').addEventListener('click', () => openSetSheet(null));
   $('set-list').addEventListener('click', (ev) => {
     const el = ev.target.closest('.set[data-id]'); if (!el) return;
@@ -2286,6 +4071,97 @@ function bindEvents() {
   $('btn-amount-add').addEventListener('click', addFromAmountSheet);
   $('btn-amount-cancel').addEventListener('click', () => closeSheet('sheet-amount'));
 
+  // 買い物タブ: 追加欄・候補・種類の切替・よく買うもの・リスト・片付け
+  $('shop-input').addEventListener('input', renderShopSuggest);
+  $('shop-input').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); addFromShopInput(); } });
+  $('btn-shop-add').addEventListener('click', addFromShopInput);
+  $('shop-suggest').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.suggest[data-type][data-id]'); if (!el) return;
+    $('shop-input').value = ''; state.shopNewKind = 'food';
+    addToShopping(el.dataset.type, el.dataset.id);
+  });
+  $('shop-new-kind').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.seg[data-kind]'); if (!el) return;
+    state.shopNewKind = el.dataset.kind === 'goods' ? 'goods' : 'food';
+    setKindSeg($('shop-new-kind'), state.shopNewKind);
+  });
+  $('shop-frequent').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.chip[data-type][data-id]'); if (el) addToShopping(el.dataset.type, el.dataset.id);
+  });
+  $('shop-group-toggle').addEventListener('click', () => { state.shopGrouped = !state.shopGrouped; renderShopList(); });
+  $('shop-list').addEventListener('change', (ev) => {
+    const cb = ev.target.closest('.shop-check'); if (!cb) return;
+    const row = findShopRow(cb.closest('.shop-item').dataset.id);
+    if (!row) { render(); return; }
+    if (cb.checked && !row.checked) openBoughtSheet(row);   // チェックしたら「買った」シート
+    else if (!cb.checked && row.checked) uncheckShopRow(row); // 外したら未購入に戻す
+  });
+  $('shop-list').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.shop-body, .shop-qty'); if (!el) return;
+    const row = findShopRow(el.closest('.shop-item').dataset.id);
+    if (row) openShopItemSheet(row, el.classList.contains('shop-qty')); else render();
+  });
+  $('btn-shop-clear').addEventListener('click', clearBought);
+  // 買ったシート
+  $('bought-store').addEventListener('change', updateBoughtForm);
+  ['bought-price', 'bought-grams'].forEach((id) => $(id).addEventListener('input', updateBoughtForm));
+  $('btn-bought-new-store').addEventListener('click', () => { showNewStoreBox('bought', true); focusLater($('bought-new-store-name')); });
+  $('btn-bought-store-create').addEventListener('click', () => createStoreInline('bought', updateBoughtForm));
+  $('btn-bought-save').addEventListener('click', saveBought);
+  $('btn-bought-skip').addEventListener('click', skipBought);
+  $('btn-bought-cancel').addEventListener('click', () => closeSheet('sheet-bought'));
+  // 品のシート
+  $('shop-item-name').addEventListener('input', updateShopItemForm);
+  $('btn-shop-item-save').addEventListener('click', saveShopItem);
+  $('btn-shop-item-cancel').addEventListener('click', () => closeSheet('sheet-shop-item'));
+  $('btn-shop-item-remove').addEventListener('click', removeShopRow);
+  $('btn-shop-item-delete').addEventListener('click', deleteGoods);
+
+  // 値段タブ: 検索・最安だけ / すべての店・カードを開く・値段の行・店を管理・値段を追加
+  $('price-search').addEventListener('input', () => { state.priceQuery = $('price-search').value; renderPrices(); });
+  $('price-mode').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.seg[data-mode]'); if (!el) return;
+    state.priceMode = el.dataset.mode === 'all' ? 'all' : 'best';
+    renderPrices();
+  });
+  $('price-list').addEventListener('click', (ev) => {
+    const row = ev.target.closest('.price-row[data-price-id]');
+    if (row) { const pr = findPriceById(row.dataset.priceId); if (pr) openPriceSheet(pr); else render(); return; }
+    const card = ev.target.closest('.price-card[data-type][data-id]');
+    if (!card || state.priceMode === 'all') return; // 「すべての店」では常に開いている
+    const k = priceKey(card.dataset.type, card.dataset.id);
+    if (state.priceOpen.has(k)) state.priceOpen.delete(k); else state.priceOpen.add(k);
+    renderPrices();
+  });
+  $('btn-stores').addEventListener('click', openStoresSheet);
+  $('btn-price-add').addEventListener('click', () => openPriceSheet(null));
+  // 値段シート
+  $('price-item').addEventListener('change', () => { updatePriceSheet(); if ($('price-item').value === '__new') focusLater($('price-new-name')); });
+  $('price-new-name').addEventListener('input', updatePriceSheet);
+  $('price-new-kind').addEventListener('click', (ev) => {
+    const el = ev.target.closest('.seg[data-kind]'); if (!el) return;
+    state.priceNewKind = el.dataset.kind === 'goods' ? 'goods' : 'food';
+    updatePriceSheet();
+  });
+  ['price-new-basis-item', 'price-new-basis-100g'].forEach((id) => $(id).addEventListener('change', updatePriceSheet));
+  $('price-store').addEventListener('change', updatePriceSheet);
+  ['price-amount', 'price-grams'].forEach((id) => $(id).addEventListener('input', updatePriceSheet));
+  $('btn-price-new-store').addEventListener('click', () => { showNewStoreBox('price', true); focusLater($('price-new-store-name')); });
+  $('btn-price-store-create').addEventListener('click', () => createStoreInline('price', updatePriceSheet));
+  $('btn-price-save').addEventListener('click', savePriceSheet);
+  $('btn-price-delete').addEventListener('click', deletePriceSheet);
+  $('btn-price-cancel').addEventListener('click', () => closeSheet('sheet-price'));
+  // 店の管理シート(名前の欄は確定したときに変更)
+  $('store-new-name').addEventListener('input', updateStoreAdd);
+  $('btn-store-add').addEventListener('click', addStore);
+  $('store-list').addEventListener('change', (ev) => {
+    const input = ev.target.closest('.store-name'); if (input) renameStore(input.closest('.store').dataset.id, input);
+  });
+  $('store-list').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.store-delete'); if (btn) deleteStore(btn.closest('.store').dataset.id);
+  });
+  $('btn-stores-close').addEventListener('click', () => closeSheet('sheet-stores'));
+
   // 背景タップでシートを閉じる
   document.querySelectorAll('.sheet-backdrop').forEach((bd) => bd.addEventListener('click', () => closeSheet('sheet-' + bd.dataset.close)));
   // Enter で保存(テキスト欄)
@@ -2294,6 +4170,22 @@ function bindEvents() {
   $('sheet-amount').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); if (!$('btn-amount-add').disabled) addFromAmountSheet(); } });
   $('sheet-set').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); if (!$('btn-set-save').disabled) saveSet(); } });
   $('sheet-set-add').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.type !== 'checkbox') { ev.preventDefault(); if (!$('btn-set-add-confirm').disabled) addFromSetSheet(); } });
+  $('sheet-bought').addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' || ev.target.tagName !== 'INPUT' || ev.isComposing) return;
+    ev.preventDefault();
+    if (ev.target.id === 'bought-new-store-name') createStoreInline('bought', updateBoughtForm); else if (!$('btn-bought-save').disabled) saveBought();
+  });
+  $('sheet-price').addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' || ev.target.tagName !== 'INPUT' || ev.target.type === 'radio' || ev.isComposing) return;
+    ev.preventDefault();
+    if (ev.target.id === 'price-new-store-name') createStoreInline('price', updatePriceSheet); else if (!$('btn-price-save').disabled) savePriceSheet();
+  });
+  $('sheet-shop-item').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.type !== 'radio' && !ev.isComposing) { ev.preventDefault(); if (!$('btn-shop-item-save').disabled) saveShopItem(); } });
+  $('sheet-stores').addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' || ev.target.tagName !== 'INPUT' || ev.isComposing) return;
+    ev.preventDefault();
+    if (ev.target.id === 'store-new-name') addStore(); else ev.target.blur(); // 名前の欄は確定(change)させる
+  });
   // 入力欄にフォーカスしたらキーボードの上に見えるようにスクロール
   document.querySelectorAll('.sheet-panel').forEach((panel) => panel.addEventListener('focusin', (ev) => {
     const el = ev.target;
@@ -2302,7 +4194,7 @@ function bindEvents() {
   }));
 
   // 設定
-  $('btn-settings-back').addEventListener('click', () => { if (state.data.settings.targets) showView('main'); });
+  $('btn-settings-back').addEventListener('click', () => { if (state.data.settings.targets) showView(state.tab); });
   ['target-p', 'target-f', 'target-c'].forEach((id) => { $(id).addEventListener('input', updateTargetKcal); $(id).addEventListener('change', updateTargetKcal); });
   $('btn-targets-save').addEventListener('click', saveTargets);
   $('btn-export').addEventListener('click', exportBackup);
@@ -2321,7 +4213,13 @@ function bindEvents() {
   $('toast-undo').addEventListener('click', () => { const fn = state.undoAction; hideToast(); if (fn) fn(); });
 
   // 日付が変わったあとに戻ってきたら再描画(0 時をまたぐ対策)。開いたままの場合は render() が予約する 0 時のタイマーと、念のための定期確認で追従する
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') render(); });
+  // 前面に戻ったときは新しい版も確認する(13.8。5 分以内の再確認はしない)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    render();
+    checkForUpdateQuietly();
+    scheduleAutoUpdate();
+  });
   window.addEventListener('pageshow', () => render());
   window.addEventListener('focus', catchUpDay);
   setInterval(catchUpDay, 30000);
@@ -2346,8 +4244,10 @@ function init() {
   // 保存領域の確認(プライベートブラウズなどで書けない場合は最初から警告)
   try { localStorage.setItem('pfc.test', '1'); localStorage.removeItem('pfc.test'); } catch (e) { showAlert('save-error', true); }
   updateAlertLayout();
-  if (!state.data.settings.targets) showView('settings'); // 初回起動: 目標の設定から
-  else render();
+  // 起動時は必ずホーム(最後に開いていたタブは覚えない)。初回起動は目標の設定から
+  if (!state.data.settings.targets) showView('settings');
+  else showView('home');
+  showUpdatedToast(); // 自動更新でリロードした直後なら 1 回だけ知らせる
   try { const p = navigator.storage && navigator.storage.persist && navigator.storage.persist(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* 無視 */ }
   registerSW();
 }
