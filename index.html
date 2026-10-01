@@ -275,7 +275,7 @@ body.typing { --tb: env(safe-area-inset-bottom); }
 .chip:active { background: var(--track); }
 .chip .name { font-size: 15px; font-weight: 500; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chip .sub { font-size: 11px; color: var(--muted); white-space: nowrap; }
-.chip.manage { color: var(--accent); border-style: dashed; font-weight: 500; }
+.chip.manage, .chip.chip-batch { color: var(--accent); border-style: dashed; font-weight: 500; } /* 「＋ セットを管理」と「≡ まとめて記録」は破線のチップ */
 .chips .empty { font-size: 13px; color: var(--muted); padding: 10px 0; }
 
 /* ==========================================================================
@@ -308,7 +308,7 @@ body.typing { --tb: env(safe-area-inset-bottom); }
 .entry .kcal small, .food .kcal small, .set .kcal small, .pick .kcal small { font-size: 11px; font-weight: 400; color: var(--muted); margin-left: 2px; }
 #entry-empty, #food-empty, #set-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 20px 8px; margin: 0; }
 
-/* セット: 編集シート・追加シートの品の行(名前と値 / 量の入力欄と単位 / 外す) */
+/* セット: 編集シート・追加シートの品の行(名前と値 / 量の入力欄と単位 / 外す)。まとめて記録シートの行(.set-item.batch-item)も同じ作り */
 .field-label { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
 .set-rows { display: flex; flex-direction: column; margin-bottom: 8px; }
 .set-item, .set-add-item { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-height: 60px; padding: 6px 0; border-top: 1px solid var(--line); }
@@ -323,7 +323,6 @@ body.typing { --tb: env(safe-area-inset-bottom); }
 .qty input[type="number"] { width: 78px; text-align: right; padding: 8px; } /* 全体の input 指定(width:100%)より強く */
 .qty .unit { flex: 0 0 auto; width: 60px; font-size: 15px; line-height: 1.2; color: var(--muted); overflow-wrap: anywhere; } /* 幅を固定して量の入力欄の位置をそろえる。長い単位は省略せず折り返す */
 .qty .unit.long { font-size: 12px; } /* 「スライス」「パック(200g)」など 4 文字以上は小さめの字で全部見せる */
-input.bad { border-color: var(--over); }
 .set-item-remove {
   flex: 0 0 auto; min-height: 44px; min-width: 44px; padding: 0 10px; border-radius: 10px;
   color: var(--over); background: var(--danger-bg); font-size: 15px; font-weight: 600;
@@ -334,7 +333,7 @@ input.bad { border-color: var(--over); }
 .set-add-item.off .body, .set-add-item.off .qty, .set-add-item.off > .pfc { opacity: .45; }
 .set-add-item.missing { opacity: .45; }
 .set-item.missing .name, .set-add-item.missing .name { color: var(--muted); }
-#btn-set-add-food { margin-bottom: 4px; }
+#btn-set-add-food, #btn-batch-add-food { margin-bottom: 4px; }
 /* 追加シートの下部(合計と「追加」)は、品が多くてもスクロールせずに見えるよう下に固定する */
 .sheet-footer {
   position: sticky; bottom: calc(-16px - env(safe-area-inset-bottom)); z-index: 1;
@@ -576,6 +575,7 @@ body.no-tabbar #tabbar, body.typing #tabbar { display: none; }
 .btn-secondary { background: var(--field); }
 .btn-row { display: flex; gap: 10px; margin-top: 14px; }
 .btn-row .btn { flex: 1; }
+#sheet-batch-save .btn-row .btn-primary { flex: 1.4; } /* 「セットとして登録」は 375px 幅だと半々では 2 行に割れるので広めに取る */
 .btn-stack { display: flex; flex-direction: column; gap: 10px; }
 .field { display: block; margin-bottom: 12px; }
 .field > span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
@@ -585,6 +585,7 @@ input[type="text"], input[type="number"], input[type="time"], select, textarea {
   font-size: 17px; -webkit-appearance: none; appearance: none; outline: none;
 }
 input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input.bad, input.bad:focus { border-color: var(--over); } /* 量が空か 0 の行。上の全体指定より後ろに書かないと枠線の色が負ける(フォーカス中も赤のまま) */
 input[type="time"] { min-width: 0; }
 /* select は appearance:none にしているので、右端に「∨」を自前で描いて選択欄だと分かるようにする */
 select {
@@ -649,7 +650,7 @@ textarea { min-height: 120px; font-size: 16px; font-family: ui-monospace, Menlo,
 }
 .sheet-panel .grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 10px; }
 .sheet-panel h3 { font-size: 18px; margin-bottom: 12px; }
-/* シートの重なり順: セット編集 < 食品の選択 < マイ食品の登録(選択シートから重ねて開く) */
+/* シートの重なり順: セット編集・まとめて記録 < 食品の選択 < マイ食品の登録(選択シートから重ねて開く) */
 #sheet-food-picker { z-index: 42; }
 #sheet-food { z-index: 45; }
 
@@ -663,7 +664,7 @@ textarea { min-height: 120px; font-size: 16px; font-family: ui-monospace, Menlo,
   padding: 6px 6px 6px 14px; display: flex; align-items: center; gap: 8px; font-size: 15px;
   box-shadow: 0 4px 14px rgba(0,0,0,.3);
 }
-.toast span { flex: 1; }
+.toast span { flex: 1; min-width: 0; overflow-wrap: anywhere; } /* 区切りの無い長いセット名でも折り返して「元に戻す」を画面内に残す */
 .toast button { min-height: 44px; padding: 0 14px; border-radius: 8px; color: var(--toast-accent); font-weight: 700; font-size: 15px; }
 body.has-update .toast { bottom: calc(var(--tb) + 144px); } /* 更新バーと重ならないよう上にずらす */
 /* シートを開いている間は画面上部に出す(シートの保存/キャンセルなどのボタンを隠さない)。警告バーがあればその直下 */
@@ -675,7 +676,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
   background: var(--card); border: 1px solid var(--line); border-radius: 12px;
   padding: 6px 6px 6px 14px; display: flex; align-items: center; gap: 8px; font-size: 15px; box-shadow: 0 4px 14px rgba(0,0,0,.2);
 }
-.update-bar span { flex: 1; }
+.update-bar span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .update-bar button { min-height: 44px; padding: 0 16px; border-radius: 8px; background: var(--accent-fill); color: var(--accent-text); font-weight: 600; }
 </style>
 </head>
@@ -725,7 +726,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
 
     <section class="quick">
       <h2>セット</h2>
-      <div id="set-chips" class="chips"><button type="button" id="btn-sets-manage" class="chip manage" data-manage="sets" aria-label="セットを管理"><span class="name">＋ セットを管理</span></button></div>
+      <div id="set-chips" class="chips"><button type="button" id="btn-batch" class="chip chip-batch" aria-label="まとめて記録"><span class="name">≡ まとめて記録</span></button><button type="button" id="btn-sets-manage" class="chip manage" data-manage="sets" aria-label="セットを管理"><span class="name">＋ セットを管理</span></button></div>
       <h2>マイ食品</h2>
       <div id="food-chips" class="chips"><button type="button" id="btn-foods-manage" class="chip manage" data-manage="foods" aria-label="マイ食品を管理"><span class="name">＋ マイ食品を管理</span></button></div>
       <h2>最近の記録</h2>
@@ -851,7 +852,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
     <section id="home-quick" class="home-quick">
       <h2 class="section-title">記録する</h2>
       <h2>セット</h2>
-      <div id="home-set-chips" class="chips"><button type="button" class="chip manage" data-manage="sets" aria-label="セットを管理"><span class="name">＋ セットを管理</span></button></div>
+      <div id="home-set-chips" class="chips"><button type="button" id="btn-home-batch" class="chip chip-batch" aria-label="まとめて記録"><span class="name">≡ まとめて記録</span></button><button type="button" class="chip manage" data-manage="sets" aria-label="セットを管理"><span class="name">＋ セットを管理</span></button></div>
       <h2>マイ食品</h2>
       <div id="home-food-chips" class="chips"><button type="button" class="chip manage" data-manage="foods" aria-label="マイ食品を管理"><span class="name">＋ マイ食品を管理</span></button></div>
       <h2>最近の記録</h2>
@@ -1125,6 +1126,48 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
   </div>
 </div>
 
+<!-- ===================== まとめて記録シート(14.2): セットを作らずに複数のマイ食品を一度に記録する ===================== -->
+<div id="sheet-batch" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="batch"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-batch-title">
+    <div class="grabber"></div>
+    <h3 id="sheet-batch-title">まとめて記録</h3>
+    <p id="batch-date" class="help num" style="margin:-8px 0 8px"></p>
+    <div id="batch-items" class="set-rows"></div>
+    <p id="batch-bad" class="help" style="margin:0 0 12px;color:var(--over)" hidden>量が空か 0 の行があります。量を入れると記録できます。</p>
+    <p id="batch-empty" class="help" style="margin:0 0 12px">「＋ 食品を追加」から、記録する食品を選んでください。同じ食品を 2 回入れることもできます。</p>
+    <button id="btn-batch-add-food" class="btn btn-secondary" aria-label="記録する食品を追加">＋ 食品を追加</button>
+    <label class="field" style="margin-top:12px"><span>時刻</span><input id="batch-time" type="time"></label>
+    <div class="sheet-footer">
+      <div id="batch-total" class="amount-preview num" aria-label="記録する品の合計">
+        <div class="vp"><span>P</span><b data-n="p">0</b><span>g</span></div>
+        <div class="vf"><span>F</span><b data-n="f">0</b><span>g</span></div>
+        <div class="vc"><span>C</span><b data-n="c">0</b><span>g</span></div>
+      </div>
+      <p class="kcal-live" style="text-align:center">合計 <b id="batch-kcal" class="num">0</b> kcal</p>
+      <div class="btn-row">
+        <button id="btn-batch-cancel" class="btn btn-secondary" aria-label="キャンセル">キャンセル</button>
+        <button id="btn-batch-confirm" class="btn btn-primary" aria-label="記録" disabled>0品を記録</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 記録後の提案(14.3): この組み合わせをセットとして登録するか ===================== -->
+<div id="sheet-batch-save" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close="batch-save"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="batch-save-text">
+    <div class="grabber"></div>
+    <h3 id="batch-save-text">記録しました</h3>
+    <p class="help" style="margin:-8px 0 12px">この組み合わせをセットとして登録しますか？ 次からはセットのチップ 1 つで記録できます。</p>
+    <label class="field"><span>セットの名前</span><input id="batch-set-name" type="text" maxlength="100" autocomplete="off" placeholder="例 いつもの朝食"></label>
+    <div class="btn-row">
+      <button id="btn-batch-save-no" class="btn btn-secondary" aria-label="セットとして登録しない">登録しない</button>
+      <button id="btn-batch-save-yes" class="btn btn-primary" aria-label="セットとして登録">セットとして登録</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== 買ったシート(買い物リストでチェックしたとき): 店と値段 ===================== -->
 <div id="sheet-bought" class="sheet" hidden>
   <div class="sheet-backdrop" data-close="bought"></div>
@@ -1261,7 +1304,7 @@ body.lock.has-alert .toast { top: calc(var(--vvt) + var(--alert-h) + 12px); } /*
 (function () {
 'use strict';
 
-const APP_VERSION = '1.2.2';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
+const APP_VERSION = '1.3.0';   // アプリのバージョン(sw.js の CACHE 名と合わせる)
 const DATA_VERSION = 1;        // 保存データの形式バージョン
 const NUTRIENTS = ['p', 'f', 'c'];
 const NUTRIENT_LABEL = { p: 'たんぱく質', f: '脂質', c: '炭水化物' };
@@ -1533,6 +1576,33 @@ function resetFoodAmountInSets(sets, foodId, amount) {
     if (!s || !Array.isArray(s.items) || !s.items.some((it) => it && it.foodId === foodId)) return s;
     return Object.assign({}, s, { items: s.items.map((it) => (it && it.foodId === foodId ? Object.assign({}, it, { amount }) : it)) });
   });
+}
+
+// ---------- まとめて記録(14章) ----------
+const BATCH_NAME_MAX = 20;    // 提案するセット名の長さ(超えたら「…」で切る)
+// 食品 id の並びを「同じ組み合わせか」を比べるための鍵にする(順番は見ない。同じ食品が 2 回あれば 2 回数える)
+function foodIdsKey(foodIds) {
+  return (Array.isArray(foodIds) ? foodIds : []).filter((id) => typeof id === 'string' && id).slice().sort().join('\n');
+}
+// 同じ食品の組み合わせ(foodId の多重集合。量は見ない)のセット。無ければ null。foodIds が空なら null
+function findSetByItems(sets, foodIds) {
+  const key = foodIdsKey(foodIds);
+  if (!key) return null;
+  return (Array.isArray(sets) ? sets : []).find((s) => s && Array.isArray(s.items) && foodIdsKey(s.items.map((it) => it && it.foodId)) === key) || null;
+}
+// 提案するセット名: 品名を「・」でつなぐ(同じ食品は 1 回だけ。無い食品は飛ばす)。20 文字を超えたら「…」で切る
+function batchSetName(foods, foodIds) {
+  const seen = new Set();
+  const names = [];
+  (Array.isArray(foodIds) ? foodIds : []).forEach((id) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    const food = findFood(foods, id);
+    const name = food ? String(food.name || '').trim() : '';
+    if (name) names.push(name);
+  });
+  const chars = Array.from(names.join('・'));
+  return chars.length > BATCH_NAME_MAX ? chars.slice(0, BATCH_NAME_MAX - 1).join('') + '…' : chars.join('');
 }
 // 最近の記録: 直近 30 日から名前+P/F/C が同じものを1つにまとめ、新しい順に最大 8 件
 function recentItems(days, today, limit) {
@@ -2210,6 +2280,7 @@ const core = {
   localDateKey, parseDateKey, isValidDateKey, addDays, todayKey, formatDateLabel, weekdayOf, formatTime, isValidTime, localIso, isValidIso,
   sumEntries, judge, remainingLabel, statFor, dayStats, entryLabel, sortEntries, sortByUsed, sortFoods, sortSets, scaleFood, amountDefaults, basisLabel,
   findFood, setAmount, setItemValues, setTotals, setSubLabel, countSetsUsingFood, removeFoodFromSets, resetFoodAmountInSets,
+  BATCH_NAME_MAX, foodIdsKey, findSetByItems, batchSetName,
   recentItems, weekSummary, countEntries, backupNeeded, formatLastBackup,
   CHART_MODES, weekKeys, dayData, kcalDirection, weekAvgLabel, weekAverage, weekChartData, chartGeometry, updateCheckDue,
   isPending, activeFoods, pendingFoods, countPending, defaultPriceBasis, priceBasisOf,
@@ -2258,9 +2329,12 @@ const state = {
   amountFoodId: null,       // 分量シートの対象マイ食品 id
   editingSetId: null,       // 編集中のセット id(新規は null)
   setDraft: null,           // セット編集シートの中身 { items: [{ foodId, text }] }(text は量の入力欄の文字)
+  batchDraft: null,         // まとめて記録シートの中身(セット編集シートと同じ形。閉じたら捨てる)
+  batchResult: null,        // まとめて記録した直後、提案シートを出している間の結果 { count, items, undo }(閉じたらトーストを出す)
+  pickerTarget: 'set',      // 食品の選択シートで選んだ食品の入れ先: 'set'(セット編集)| 'batch'(まとめて記録)
   setAddId: null,           // セット追加シートの対象セット id
   setAddFoodIds: [],        // セット追加シートの各行のマイ食品 id(開いたときの中身。行の data-index と対応)
-  foodSheetForSet: false,   // マイ食品の登録シートを、セットの食品選択シートから重ねて開いた
+  foodSheetForSet: false,   // マイ食品の登録シートを、食品選択シートから重ねて開いた(保存したら pickerTarget の下書きに入れる)
   foodSheetWasPending: false, // マイ食品シートで PFC未登録の食品を開いた(保存するとふつうのマイ食品になる)
   shopGrouped: false,       // 買い物リストの「安い店ごとに分ける」(初期はオフ。覚えない)
   shopNewKind: 'food',      // 候補に無い名前で追加するときの種類: 'food'(PFCはあとで)| 'goods'(食品ではない)
@@ -2384,6 +2458,7 @@ function render() {
   // 記録シートを開いたまま日付が変わった場合、保存先の表示を正直に更新する(「今日」→「昨日」)
   if (!$('sheet-entry').hidden && state.sheetDateKey) $('entry-date').textContent = core.formatDateLabel(state.sheetDateKey, t) + ' に保存します';
   if (!$('sheet-set-add').hidden && state.sheetDateKey) $('set-add-date').textContent = core.formatDateLabel(state.sheetDateKey, t) + ' に追加します';
+  if (!$('sheet-batch').hidden && state.sheetDateKey) $('batch-date').textContent = core.formatDateLabel(state.sheetDateKey, t) + ' に記録します';
 }
 
 // --- 共通部品 ---
@@ -2811,13 +2886,15 @@ function hideToast() {
 }
 
 // ---------- シートの開閉 ----------
-const SHEETS = ['sheet-entry', 'sheet-food', 'sheet-amount', 'sheet-set', 'sheet-food-picker', 'sheet-set-add', 'sheet-bought', 'sheet-shop-item', 'sheet-price', 'sheet-stores'];
+const SHEETS = ['sheet-entry', 'sheet-food', 'sheet-amount', 'sheet-set', 'sheet-food-picker', 'sheet-set-add', 'sheet-batch', 'sheet-batch-save', 'sheet-bought', 'sheet-shop-item', 'sheet-price', 'sheet-stores'];
 // シートを閉じたときの後始末(閉じ方はボタン・背景のタップのどちらでも)
 const SHEET_CLOSED = {
   // 買ったシートをキャンセルで閉じたら、行のチェックを元に戻して見せる
   'sheet-bought': () => { state.boughtRowId = null; renderShopping(); },
   'sheet-shop-item': () => { state.shopItemRowId = null; },
-  'sheet-price': () => { state.editingPriceId = null; }
+  'sheet-price': () => { state.editingPriceId = null; },
+  'sheet-batch': () => { state.batchDraft = null; },      // キャンセル・背景タップで閉じたら中身は捨てる(14.2)
+  'sheet-batch-save': finishBatchWithoutSet              // 「登録しない」・背景タップ: 記録のトーストだけ出す(14.3)
 };
 function anySheetOpen() { return SHEETS.some((id) => !$(id).hidden); }
 // シートを開くときは表示中のトースト(「元に戻す」付きなど)を消す。開いている記録を「元に戻す」で消してしまう、といった食い違いを防ぐ
@@ -2920,10 +2997,10 @@ function deleteEntry() {
     if (commit()) toast('元に戻しました');
   });
 }
-// 記録をまとめて dayKey の日(省略時は表示中の日)に追加(最近の記録 / 分量シート / セットから)。time 省略時はその日の既定時刻。
-// 1 品ごとに別の記録になる。トーストの「元に戻す」は今回追加した記録をまとめて取り消す。
-// fromHome: ホームの入力エリアから追加した(記録タブの表示日は動かさない)
-function addEntries(items, label, dayKey, time, fromHome) {
+// 記録をまとめて dayKey の日(省略時は表示中の日)に追加して保存する(最近の記録 / 分量シート / セット / まとめて記録から)。
+// time 省略時はその日の既定時刻。1 品ごとに別の記録になる。fromHome: ホームの入力エリアから追加した(記録タブの表示日は動かさない)。
+// 戻り値は「元に戻す」関数(今回追加した記録をまとめて取り消す)。保存できなかった(警告バー表示中)ときは null
+function pushEntries(items, dayKey, time, fromHome) {
   const key = dayKey || state.dateKey;
   const t = core.isValidTime(time) ? time : defaultTimeFor(key);
   const createdAt = core.localIso(new Date());
@@ -2936,15 +3013,20 @@ function addEntries(items, label, dayKey, time, fromHome) {
   added.forEach((e) => day.entries.push(e));
   // 表示中の日と違う日に追加した(シートを開いている間に日付が変わった)ときは、追加した日を見せる
   if (key !== state.dateKey && !fromHome) { state.dateKey = key; state.followToday = false; }
-  if (!commit()) return; // 保存できなかった(警告バー表示中)ときは成功のトーストを出さない
+  if (!commit()) return null;
   const gen = state.generation;
   const ids = new Set(added.map((e) => e.id));
-  toast(label || '追加しました', () => {
+  return () => {
     if (gen !== state.generation) { toast('元に戻せませんでした'); return; }
     const d = state.data.days[key];
     if (d) d.entries = d.entries.filter((x) => !ids.has(x.id));
     if (commit()) toast('元に戻しました');
-  });
+  };
+}
+// 追加して、トースト「〜しました [元に戻す]」を出す(保存できなかったときは成功のトーストを出さない)
+function addEntries(items, label, dayKey, time, fromHome) {
+  const undo = pushEntries(items, dayKey, time, fromHome);
+  if (undo) toast(label || '追加しました', undo);
 }
 function addQuickEntry(item, label, dayKey, time, fromHome) { addEntries([item], label, dayKey, time, fromHome); }
 // クイック追加の追加先: ホームからなら今日、記録タブからなら表示中の日(どちらも 0 時を過ぎていたら先に追従させる)
@@ -3041,8 +3123,8 @@ function saveFood() {
   closeSheet('sheet-food');
   const saved = commit();
   if (wasPending && saved) toast(v.name + ' をマイ食品に登録しました');
-  // セットの食品選択シートから登録した → そのままセットに入れる(選択シートは閉じてセット編集シートに戻る)
-  if (isNew && state.foodSheetForSet && !$('sheet-set').hidden) addFoodToDraft(newId);
+  // 食品選択シートから登録した → そのまま下書き(セット編集 / まとめて記録)に入れる(選択シートは閉じて元のシートに戻る)
+  if (isNew && state.foodSheetForSet && !$(DRAFTS[state.pickerTarget].sheet).hidden) addFoodToDraft(state.pickerTarget, newId);
   state.foodSheetForSet = false;
   if (resetMsg && saved) toast(resetMsg);
   if (isNew && saved) toast('マイ食品に登録しました'); // 記録シートから登録したときは、そのシートを隠さない位置(画面上部)に出る
@@ -3143,45 +3225,45 @@ function openSetsManage() {
   if (!state.data.sets.length) openSetSheet(null);
 }
 
-// --- セットの作成・編集シート ---
-function openSetSheet(set) {
-  state.editingSetId = set ? set.id : null;
-  state.setDraft = { items: set ? set.items.map((it) => ({ foodId: it.foodId, text: String(it.amount) })) : [] };
-  $('sheet-set-title').textContent = set ? 'セットを編集' : 'セットを作る';
-  $('set-name').value = set ? set.name : '';
-  $('btn-set-delete').hidden = !set;
-  renderSetItems();
-  openSheet('sheet-set');
-  if (!set) focusLater($('set-name'));
-}
-// 品の一覧を描き直す(追加・外すのとき)。量の入力中は描き直さず updateSetForm だけ呼ぶ(フォーカスを保つため)
-function renderSetItems() {
+// --- 下書き(セット編集シート / まとめて記録シート)の品の行。どちらも { items: [{ foodId, text }] } を同じ作りの行で出す ---
+// kind は 'set' か 'batch'。行・入力欄・「外す」のクラスと、入れ先の要素 id をここにまとめる
+const DRAFTS = {
+  set:   { sheet: 'sheet-set',   draft: () => state.setDraft,   items: 'set-items',   empty: 'set-items-empty', row: 'set-item',             amount: 'set-item-amount', remove: 'set-item-remove',              total: 'set-total',   kcal: 'set-total-kcal', update: () => updateSetForm(),   maxMsg: '1つのセットに入れられるのは ' + core.MAX_SET_ITEMS + ' 品までです' },
+  batch: { sheet: 'sheet-batch', draft: () => state.batchDraft, items: 'batch-items', empty: 'batch-empty',     row: 'set-item batch-item', amount: 'batch-amount',    remove: 'set-item-remove batch-remove', total: 'batch-total', kcal: 'batch-kcal',     update: () => updateBatchForm(), maxMsg: '一度に記録できるのは ' + core.MAX_SET_ITEMS + ' 品までです' }
+};
+// 品の一覧を描き直す(追加・外すのとき)。量の入力中は描き直さず update だけ呼ぶ(フォーカスを保つため)
+function renderDraftItems(kind) {
+  const cfg = DRAFTS[kind];
+  const draft = cfg.draft();
+  if (!draft) return;
   const foods = state.data.foods;
-  $('set-items').innerHTML = state.setDraft.items.map((it, i) => {
+  $(cfg.items).innerHTML = draft.items.map((it, i) => {
     const food = core.findFood(foods, it.foodId);
     if (!food) {
-      return '<div class="set-item missing" data-index="' + i + '"><span class="body"><span class="name">削除されたマイ食品</span><span class="pfc">記録には使えません</span></span>' +
-        '<button type="button" class="set-item-remove" aria-label="削除されたマイ食品を外す">外す</button></div>';
+      return '<div class="' + cfg.row + ' missing" data-index="' + i + '"><span class="body"><span class="name">削除されたマイ食品</span><span class="pfc">記録には使えません</span></span>' +
+        '<button type="button" class="' + cfg.remove + '" aria-label="削除されたマイ食品を外す">外す</button></div>';
     }
-    return '<div class="set-item" data-index="' + i + '">' +
+    return '<div class="' + cfg.row + '" data-index="' + i + '">' +
       '<span class="body"><span class="name">' + esc(food.name) + '</span></span>' +
-      amountInputHtml('set-item-amount', food, it.text, food.name) +
-      '<button type="button" class="set-item-remove" aria-label="' + esc(food.name) + ' を外す">外す</button>' +
+      amountInputHtml(cfg.amount, food, it.text, food.name) +
+      '<button type="button" class="' + cfg.remove + '" aria-label="' + esc(food.name) + ' を外す">外す</button>' +
       '<span class="pfc num"></span>' + // P/F/C は行の幅いっぱいの2行目に出す(量の入力欄の横は狭いため)
     '</div>';
   }).join('');
-  $('set-items-empty').hidden = state.setDraft.items.length > 0;
-  updateSetForm();
+  $(cfg.empty).hidden = draft.items.length > 0;
+  cfg.update();
 }
-// 入力欄の値で各品の値と合計を更新し、保存できるかを決める(名前が空・品が 0 個・量が不正なら保存不可)
-function updateSetForm() {
-  if (!state.setDraft) return;
+// 入力欄の値を下書きに控え、各行の P/F/C と合計欄を更新する。戻り値 { vals: 使える品の値, bad: 量が不正な行がある }
+function readDraftRows(kind) {
+  const cfg = DRAFTS[kind];
+  const draft = cfg.draft();
   const foods = state.data.foods;
   const vals = [];
   let bad = false;
-  $('set-items').querySelectorAll('.set-item[data-index]').forEach((row) => {
-    const it = state.setDraft.items[Number(row.dataset.index)];
-    const input = row.querySelector('.set-item-amount');
+  if (!draft) return { vals, bad };
+  $(cfg.items).querySelectorAll('[data-index]').forEach((row) => {
+    const it = draft.items[Number(row.dataset.index)];
+    const input = row.querySelector('input[type="number"]');
     const food = it && core.findFood(foods, it.foodId);
     if (!input || !food) return;
     const amt = readAmountInput(input);
@@ -3192,8 +3274,34 @@ function updateSetForm() {
     row.querySelector('.pfc').innerHTML = pfcKcalHtml(sc);
     vals.push(sc);
   });
-  fillTotals('set-total', 'set-total-kcal', core.sumEntries(vals));
-  $('btn-set-save').disabled = !$('set-name').value.trim() || state.setDraft.items.length === 0 || bad;
+  fillTotals(cfg.total, cfg.kcal, core.sumEntries(vals));
+  return { vals, bad };
+}
+// 「外す」: 入力中の量を先に控えてから、その行を下書きから除いて描き直す
+function removeDraftItem(kind, row) {
+  const draft = DRAFTS[kind].draft();
+  if (!draft) return;
+  DRAFTS[kind].update();
+  draft.items.splice(Number(row.dataset.index), 1);
+  renderDraftItems(kind);
+}
+
+// --- セットの作成・編集シート ---
+function openSetSheet(set) {
+  state.editingSetId = set ? set.id : null;
+  state.setDraft = { items: set ? set.items.map((it) => ({ foodId: it.foodId, text: String(it.amount) })) : [] };
+  $('sheet-set-title').textContent = set ? 'セットを編集' : 'セットを作る';
+  $('set-name').value = set ? set.name : '';
+  $('btn-set-delete').hidden = !set;
+  renderDraftItems('set');
+  openSheet('sheet-set');
+  if (!set) focusLater($('set-name'));
+}
+// 入力欄の値で各品の値と合計を更新し、保存できるかを決める(名前が空・品が 0 個・量が不正なら保存不可)
+function updateSetForm() {
+  if (!state.setDraft) return;
+  const r = readDraftRows('set');
+  $('btn-set-save').disabled = !$('set-name').value.trim() || state.setDraft.items.length === 0 || r.bad;
 }
 function saveSet() {
   updateSetForm();
@@ -3221,27 +3329,36 @@ function deleteSet() {
   commit();
 }
 
-// --- マイ食品の選択シート(セット編集シートの上に重ねる) ---
-function openFoodPicker() {
-  const foods = core.sortFoods(core.activeFoods(state.data.foods)); // PFC未登録はセットに入れられない
-  const inSet = new Set(state.setDraft ? state.setDraft.items.map((it) => it.foodId) : []);
+// --- マイ食品の選択シート(セット編集シート / まとめて記録シートの上に重ねる) ---
+// target: 選んだ食品の入れ先 'set' | 'batch'(省略時は 'set')
+function openFoodPicker(target) {
+  state.pickerTarget = target === 'batch' ? 'batch' : 'set';
+  const forBatch = state.pickerTarget === 'batch';
+  const foods = core.sortFoods(core.activeFoods(state.data.foods)); // PFC未登録はセットにも記録にも入れられない
+  const draft = DRAFTS[state.pickerTarget].draft();
+  const inDraft = new Set(draft ? draft.items.map((it) => it.foodId) : []);
+  const where = forBatch ? '記録' : 'セット';
+  $('sheet-picker-title').textContent = forBatch ? '記録する食品' : 'セットに入れる食品';
   $('food-picker-list').innerHTML = foods.map((f) =>
-    '<button type="button" class="pick" data-food-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' をセットに入れる">' +
-      '<span class="body"><span class="name-line"><span class="name">' + esc(f.name) + '</span><span class="pfc-note">' + esc(core.basisLabel(f)) + (inSet.has(f.id) ? ' · <span class="in-set">入っています</span>' : '') + '</span></span>' +
+    '<button type="button" class="pick" data-food-id="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' を' + where + 'に入れる">' +
+      '<span class="body"><span class="name-line"><span class="name">' + esc(f.name) + '</span><span class="pfc-note">' + esc(core.basisLabel(f)) + (inDraft.has(f.id) ? ' · <span class="in-set">入っています</span>' : '') + '</span></span>' +
       '<span class="pfc num">' + pfcColsHtml(f) + '</span></span>' +
       '<span class="kcal num">' + core.fmtInt(core.calcKcal(f.p, f.f, f.c)) + '<small>kcal</small></span>' +
     '</button>').join('');
+  $('food-picker-empty').textContent = 'マイ食品がまだありません。上の「＋ 新しいマイ食品を登録」から登録すると、そのまま' + where + 'に入ります。';
   $('food-picker-empty').hidden = foods.length > 0;
   openSheet('sheet-food-picker');
 }
-// 選んだマイ食品を、分量シートの初期値(1食分なら 1、100g 基準なら 100)でセットに入れる
-function addFoodToDraft(foodId) {
+// 選んだマイ食品を、分量シートの初期値(1食分なら 1、100g 基準なら 100)で下書き(kind: 'set' | 'batch')に入れる
+function addFoodToDraft(kind, foodId) {
+  const cfg = DRAFTS[kind];
+  const draft = cfg.draft();
   const food = core.findFood(state.data.foods, foodId);
-  if (!food || !state.setDraft) return;
-  if (state.setDraft.items.length >= core.MAX_SET_ITEMS) { toast('1つのセットに入れられるのは ' + core.MAX_SET_ITEMS + ' 品までです'); return; }
-  state.setDraft.items.push({ foodId: food.id, text: String(core.amountDefaults(food).value) });
+  if (!food || !draft) return;
+  if (draft.items.length >= core.MAX_SET_ITEMS) { toast(cfg.maxMsg); return; }
+  draft.items.push({ foodId: food.id, text: String(core.amountDefaults(food).value) });
   closeSheet('sheet-food-picker');
-  renderSetItems();
+  renderDraftItems(kind);
 }
 
 // --- セット追加シート(タップ後に中身を確認して記録する) ---
@@ -3322,6 +3439,86 @@ function addFromSetSheet() {
   set.usedAt = now; set.useCount = (set.useCount || 0) + 1;
   closeSheet('sheet-set-add');
   addEntries(items, set.name + '(' + items.length + '品)を追加しました', key, time, state.sheetFromHome);
+}
+
+// ---------- まとめて記録(14章): セットを作らずに複数のマイ食品を一度に記録する ----------
+// fromHome: ホームの入力エリアから開いた(記録先は今日)。記録先の日と時刻はシートを開いた時点で確定(0 時をまたいでも動かさない)
+function openBatchSheet(fromHome) {
+  state.sheetFromHome = !!fromHome;
+  state.sheetDateKey = quickTargetDay(fromHome);
+  state.batchDraft = { items: [] };
+  $('batch-date').textContent = core.formatDateLabel(state.sheetDateKey, today()) + ' に記録します';
+  $('batch-time').value = defaultTimeFor(state.sheetDateKey);
+  renderDraftItems('batch');
+  openSheet('sheet-batch');
+  // 自動フォーカスはしない(入力欄が無いので「＋ 食品を追加」から始める)
+}
+// 各行の値と合計を更新し、「N品を記録」の文言と押せるかを決める(0 品、または量が不正な行があれば押せない)
+function updateBatchForm() {
+  if (!state.batchDraft) return;
+  const r = readDraftRows('batch');
+  const btn = $('btn-batch-confirm');
+  btn.disabled = r.vals.length === 0 || r.bad;
+  btn.textContent = r.vals.length + '品を記録';
+  $('batch-bad').hidden = !r.bad; // 赤枠の行がある理由を書く
+  btn.setAttribute('aria-label', btn.textContent);
+}
+function batchToast(n) { return n + '品を記録しました'; }
+// 「N品を記録」: セット追加シートと同じ処理(品ごとに別の記録・foodId 付き・名前は scaleFood・usedAt/useCount 更新)で記録し、
+// 2 品以上で同じ組み合わせのセットがまだ無ければ「セットとして登録しますか？」を出す。それ以外はトーストへ
+function confirmBatch() {
+  if (!state.batchDraft) { closeSheet('sheet-batch'); return; }
+  updateBatchForm();
+  if ($('btn-batch-confirm').disabled) return;
+  const foods = state.data.foods;
+  const picked = state.batchDraft.items
+    .map((it) => ({ food: core.findFood(foods, it.foodId), amount: core.setAmount(it.text) }))
+    .filter((x) => x.food && x.amount !== null);
+  const key = state.sheetDateKey || state.dateKey;
+  const time = core.isValidTime($('batch-time').value) ? $('batch-time').value : defaultTimeFor(key);
+  const fromHome = state.sheetFromHome;
+  const now = core.localIso(new Date());
+  const items = picked.map((x) => {
+    x.food.usedAt = now; x.food.useCount = (x.food.useCount || 0) + 1;
+    return core.scaleFood(x.food, x.amount);
+  });
+  closeSheet('sheet-batch'); // 閉じると下書きは捨てる(SHEET_CLOSED)
+  const undo = pushEntries(items, key, time, fromHome);
+  if (!undo) return; // 保存できなかった(警告バー表示中)
+  const result = { count: items.length, undo, items: picked.map((x) => ({ foodId: x.food.id, amount: x.amount })) };
+  const foodIds = result.items.map((it) => it.foodId);
+  if (result.count >= 2 && !core.findSetByItems(state.data.sets, foodIds)) openBatchSaveSheet(result, core.batchSetName(foods, foodIds));
+  else toast(batchToast(result.count), undo);
+}
+// --- 記録後の提案シート(14.3) ---
+function openBatchSaveSheet(result, name) {
+  state.batchResult = result;
+  $('batch-save-text').textContent = batchToast(result.count);
+  $('batch-set-name').value = name;
+  updateBatchSaveForm();
+  openSheet('sheet-batch-save');
+}
+function updateBatchSaveForm() { $('btn-batch-save-yes').disabled = !$('batch-set-name').value.trim(); }
+// 「登録しない」・背景タップで閉じたとき(SHEET_CLOSED から): 記録のトーストだけ出す
+function finishBatchWithoutSet() {
+  const r = state.batchResult;
+  state.batchResult = null;
+  if (r) toast(batchToast(r.count), r.undo);
+}
+// 「セットとして登録」: 今回記録した食品と量をそのまま items に(同じ食品が 2 回あれば 2 行のまま)。usedAt は今、useCount は 1
+function saveBatchAsSet() {
+  const r = state.batchResult;
+  if (!r) { closeSheet('sheet-batch-save'); return; }
+  updateBatchSaveForm();
+  if ($('btn-batch-save-yes').disabled) return;
+  const name = $('batch-set-name').value.trim().slice(0, core.MAX_NAME);
+  const now = core.localIso(new Date());
+  state.data.sets.push({ id: core.genId('s'), name, items: r.items, usedAt: now, useCount: 1, createdAt: now });
+  state.batchResult = null; // 閉じたときの「記録しました」だけのトーストは出さない(下で出す)
+  closeSheet('sheet-batch-save');
+  const saved = commit();
+  // 「元に戻す」は記録だけを取り消す(登録したセットは残す)
+  toast(saved ? r.count + '品を記録し、セット「' + name + '」を登録しました' : batchToast(r.count), r.undo);
 }
 
 // ---------- 買い物リスト(13.6) ----------
@@ -4002,6 +4199,7 @@ function bindEvents() {
   // クイック追加のチップ列(委譲)。記録タブは表示中の日に、ホームの入力エリアは常に今日に入れる
   const bindQuickRows = (setRow, foodRow, recentRow, fromHome) => {
     setRow.addEventListener('click', (ev) => {
+      if (ev.target.closest('.chip.chip-batch')) { openBatchSheet(fromHome); return; }
       if (ev.target.closest('.chip.manage')) { openSetsManage(); return; }
       const el = ev.target.closest('.chip[data-set-id]'); if (el) openSetAddSheet(el.dataset.setId, fromHome);
     });
@@ -4073,17 +4271,14 @@ function bindEvents() {
   $('set-name').addEventListener('input', updateSetForm);
   $('set-items').addEventListener('input', (ev) => { if (ev.target.classList.contains('set-item-amount')) updateSetForm(); });
   $('set-items').addEventListener('click', (ev) => {
-    const btn = ev.target.closest('.set-item-remove'); if (!btn) return;
-    updateSetForm(); // 入力中の量を先に控えてから外す
-    state.setDraft.items.splice(Number(btn.closest('.set-item').dataset.index), 1);
-    renderSetItems();
+    const btn = ev.target.closest('.set-item-remove'); if (btn) removeDraftItem('set', btn.closest('[data-index]'));
   });
-  $('btn-set-add-food').addEventListener('click', openFoodPicker);
+  $('btn-set-add-food').addEventListener('click', () => openFoodPicker('set'));
   $('btn-set-save').addEventListener('click', saveSet);
   $('btn-set-cancel').addEventListener('click', () => closeSheet('sheet-set'));
   $('btn-set-delete').addEventListener('click', deleteSet);
   $('food-picker-list').addEventListener('click', (ev) => {
-    const el = ev.target.closest('.pick[data-food-id]'); if (el) addFoodToDraft(el.dataset.foodId);
+    const el = ev.target.closest('.pick[data-food-id]'); if (el) addFoodToDraft(state.pickerTarget, el.dataset.foodId);
   });
   $('btn-picker-new-food').addEventListener('click', () => openFoodSheet(null, null, { forSet: true }));
   $('btn-picker-cancel').addEventListener('click', () => closeSheet('sheet-food-picker'));
@@ -4092,6 +4287,18 @@ function bindEvents() {
   ['input', 'change'].forEach((type) => $('set-add-items').addEventListener(type, updateSetAddForm));
   $('btn-set-add-confirm').addEventListener('click', addFromSetSheet);
   $('btn-set-add-cancel').addEventListener('click', () => closeSheet('sheet-set-add'));
+
+  // まとめて記録シート(14章)と記録後の提案シート
+  $('batch-items').addEventListener('input', (ev) => { if (ev.target.classList.contains('batch-amount')) updateBatchForm(); });
+  $('batch-items').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.batch-remove'); if (btn) removeDraftItem('batch', btn.closest('[data-index]'));
+  });
+  $('btn-batch-add-food').addEventListener('click', () => openFoodPicker('batch'));
+  $('btn-batch-confirm').addEventListener('click', confirmBatch);
+  $('btn-batch-cancel').addEventListener('click', () => closeSheet('sheet-batch'));
+  $('batch-set-name').addEventListener('input', updateBatchSaveForm);
+  $('btn-batch-save-yes').addEventListener('click', saveBatchAsSet);
+  $('btn-batch-save-no').addEventListener('click', () => closeSheet('sheet-batch-save'));
 
   // 分量シート
   $('amount-value').addEventListener('input', updateAmountForm);
@@ -4199,6 +4406,8 @@ function bindEvents() {
   $('sheet-amount').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); if (!$('btn-amount-add').disabled) addFromAmountSheet(); } });
   $('sheet-set').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); if (!$('btn-set-save').disabled) saveSet(); } });
   $('sheet-set-add').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.type !== 'checkbox') { ev.preventDefault(); if (!$('btn-set-add-confirm').disabled) addFromSetSheet(); } });
+  $('sheet-batch').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { ev.preventDefault(); if (!$('btn-batch-confirm').disabled) confirmBatch(); } });
+  $('sheet-batch-save').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && !ev.isComposing) { ev.preventDefault(); if (!$('btn-batch-save-yes').disabled) saveBatchAsSet(); } });
   $('sheet-bought').addEventListener('keydown', (ev) => {
     if (ev.key !== 'Enter' || ev.target.tagName !== 'INPUT' || ev.isComposing) return;
     ev.preventDefault();

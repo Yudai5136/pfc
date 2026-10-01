@@ -64,6 +64,10 @@ tests/                … 動作確認用のテスト(公開には不要。ア�
 - **セット**: 毎朝の朝食のように決まった組み合わせを、まとめて記録できます。中身はマイ食品です。
   - 作り方: 「＋ 新しいセット」→ 名前 →「＋ 食品を追加」でマイ食品を選んで量を決める →「保存」。
   - 使い方: セットのチップをタップ → 中身を確認(食べなかった品はチェックを外す、量を変える)→「追加」。1 品ずつ別の記録になり、5 秒以内なら「元に戻す」でまとめて取り消せます。確認画面で変えた量はその回だけです。
+- **まとめて記録**(セットを作らずに、複数のマイ食品を一度に記録する): 記録タブとホームの「セット」の行の先頭にある「**≡ まとめて記録**」をタップします。
+  - 「＋ 食品を追加」でマイ食品を選び(同じ食品を 2 回入れてもかまいません。「＋ 新しいマイ食品を登録」もそのまま使えます)、量を直して「N品を記録」。セットと同じく 1 品ずつ別の記録になり、5 秒以内なら「元に戻す」でまとめて取り消せます。
+  - 2 品以上を記録し、その組み合わせのセットがまだ無いときは「**この組み合わせをセットとして登録しますか？**」と聞かれます。名前(初期値は品名を「・」でつないだもの)を直して「セットとして登録」を押すと、今回の食品と量でセットができ、次からはチップ 1 つで記録できます。「登録しない」なら記録だけ残ります(「元に戻す」で取り消せるのは記録だけで、登録したセットは残ります)。
+  - キャンセルや背景のタップで閉じると、選んだ内容は捨てられます。
 - **PFC未登録**: 買い物リストで「食品(PFCはあとで)」として追加した食品です。P/F/C がまだ無いので、チップや一覧には出ません。
   「**PFCを入れる**」から基準と P/F/C を入れて保存すると、ふつうのマイ食品になります。件数はタブと切替のバッジに出ます。
 
@@ -139,13 +143,14 @@ tests/                … 動作確認用のテスト(公開には不要。ア�
 - タブ構成・買い物・値段・自動更新(v1.2.0)は仕様書 13 章。
   - マイ食品に `pending`(PFC未登録)と `priceBasis`(値段の単位)、新しく `stores`(店)・`goods`(食品ではない品)・`prices`(品 × 店の最新の値段)・`shopping`(買い物リスト)の配列が増えました。
   - 「よく買うもの」の並び順のため、マイ食品と goods に `shopCount`(買い物リストに入れた回数。1 以上のときだけ)を持たせています(仕様書に無い追加の項目)。
+- まとめて記録(v1.3.0)は仕様書 14 章。データ構造の変更はありません。セット編集シートの行(`DRAFTS` / `renderDraftItems`)・食品の選択シート(`openFoodPicker('set' | 'batch')`)・記録の追加(`pushEntries` / `addEntries`)を共用しています。
 - テストは `tests/` にあります(Mac + Node.js 22 + Google Chrome が必要)。全部まとめて流すときは:
   ```
   cd tests
-  TZ=Asia/Tokyo node unit.js && TZ=Asia/Tokyo node sets-unit.js && TZ=Asia/Tokyo node v12-unit.js && TZ=America/Los_Angeles node v12-unit.js
-  node scenario.js && node robust.js && TZ=Asia/Tokyo node fixes.js && node sets.js && node shots.js && node tabs.js && node shopping.js && node pfccols.js && node typing.js
+  TZ=Asia/Tokyo node unit.js && TZ=Asia/Tokyo node sets-unit.js && TZ=Asia/Tokyo node v12-unit.js && TZ=Asia/Tokyo node batch-unit.js && TZ=America/Los_Angeles node v12-unit.js
+  node scenario.js && node robust.js && TZ=Asia/Tokyo node fixes.js && node sets.js && node shots.js && node tabs.js && node shopping.js && node pfccols.js && node typing.js && node batch.js
   ```
-  - `unit.js` / `sets-unit.js` / `v12-unit.js` … core の関数のテスト(ブラウザ不要)
+  - `unit.js` / `sets-unit.js` / `v12-unit.js` / `batch-unit.js` … core の関数のテスト(ブラウザ不要)
   - `scenario.js` / `robust.js` / `fixes.js` / `sets.js` / `shots.js` … v1.0〜v1.1 の画面のテスト
-  - `tabs.js` … タブ・ホーム・PFC未登録・自動更新、`shopping.js` … 買い物リスト・値段・店の管理・書き出し/読み込み
+  - `tabs.js` … タブ・ホーム・PFC未登録・自動更新、`shopping.js` … 買い物リスト・値段・店の管理・書き出し/読み込み、`batch.js` … まとめて記録
   - スクリーンショットは `tests/out/` に保存されます。Chrome が残ったときは `pkill -f "pfc-cdp-"`。
